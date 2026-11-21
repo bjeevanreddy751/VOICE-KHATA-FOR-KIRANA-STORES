@@ -338,11 +338,11 @@ async def voice_websocket(
                         "tts_cached": tts_res.get("tts_cached", False),
                         "engine_latency_ms": turn["engine_latency_ms"],
                         "latency_ms": e2e_latency_ms,
-                        "has_pending_disambiguation": turn["has_pending_disambiguation"],
+                        "has_pending_disambiguation": turn.get("has_pending_disambiguation", False),
                         "detected_language": final_lang,
                         "dashboard": turn["dashboard"],
                     }
-                    for k in ("highlight_customer_id", "customer", "timeline", "summary", "store_summary", "auto_enrolled"):
+                    for k in ("highlight_customer_id", "customer", "timeline", "summary", "store_summary", "auto_enrolled", "note_updated"):
                         if k in turn:
                             resp_payload[k] = turn[k]
 
@@ -386,11 +386,11 @@ async def voice_websocket(
                         "tts_cached": tts_res.get("tts_cached", False),
                         "engine_latency_ms": turn["engine_latency_ms"],
                         "latency_ms": e2e_latency_ms,
-                        "has_pending_disambiguation": turn["has_pending_disambiguation"],
+                        "has_pending_disambiguation": turn.get("has_pending_disambiguation", False),
                         "detected_language": final_lang,
                         "dashboard": turn["dashboard"],
                     }
-                    for k in ("highlight_customer_id", "customer", "timeline", "summary", "store_summary", "auto_enrolled"):
+                    for k in ("highlight_customer_id", "customer", "timeline", "summary", "store_summary", "auto_enrolled", "note_updated"):
                         if k in turn:
                             resp_payload[k] = turn[k]
 
@@ -427,6 +427,11 @@ class CustomerCreateRequest(BaseModel):
     phone: str
     opt_in_reminder: bool = True
     opening_balance: int = 0
+    owner_note: str = ""
+
+
+class CustomerNoteUpdateRequest(BaseModel):
+    note: str
 
 
 # ---------------------------------------------------------------------------
@@ -463,9 +468,24 @@ async def create_customer(req: CustomerCreateRequest):
             phone=req.phone,
             opt_in_reminder=req.opt_in_reminder,
             opening_balance=req.opening_balance,
+            owner_note=req.owner_note,
         )
         return {
             "customer": cust,
+            "dashboard": database.fetch_dashboard_state(),
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.patch("/api/customers/{customer_id}/note")
+async def update_customer_note(customer_id: int, req: CustomerNoteUpdateRequest):
+    """Update private store owner note for a specific khata customer."""
+    try:
+        updated = database.update_customer_note(customer_id, req.note)
+        return {
+            "status": "ok",
+            "customer": updated,
             "dashboard": database.fetch_dashboard_state(),
         }
     except Exception as exc:
@@ -518,11 +538,11 @@ async def voice_turn(
         "tts_cached": tts_res.get("tts_cached", False),
         "engine_latency_ms": turn["engine_latency_ms"],
         "latency_ms": e2e_latency,
-        "has_pending_disambiguation": turn["has_pending_disambiguation"],
+        "has_pending_disambiguation": turn.get("has_pending_disambiguation", False),
         "detected_language": active_lang,
         "dashboard": turn["dashboard"],
     }
-    for k in ("highlight_customer_id", "customer", "timeline", "summary", "store_summary", "auto_enrolled"):
+    for k in ("highlight_customer_id", "customer", "timeline", "summary", "store_summary", "auto_enrolled", "note_updated"):
         if k in turn:
             ret[k] = turn[k]
     return ret

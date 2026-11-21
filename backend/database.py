@@ -141,7 +141,8 @@ def init_db(db_path: str | Path | None = None) -> None:
                 landmark TEXT NOT NULL,
                 phone TEXT NOT NULL,
                 opt_in_reminder INTEGER NOT NULL DEFAULT 1,
-                net_balance INTEGER NOT NULL DEFAULT 0
+                net_balance INTEGER NOT NULL DEFAULT 0,
+                owner_note TEXT NOT NULL DEFAULT ''
             );
 
             CREATE TABLE IF NOT EXISTS transactions (
@@ -176,6 +177,12 @@ def init_db(db_path: str | Path | None = None) -> None:
                 ON transactions(tx_date, status);
         """)
 
+        # Backward compatibility migration for owner_note column
+        try:
+            conn.execute("ALTER TABLE customers ADD COLUMN owner_note TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
+
         # Check if seeding is required
         cursor = conn.execute("SELECT COUNT(*) AS cnt FROM customers")
         row = cursor.fetchone()
@@ -198,19 +205,19 @@ def _seed_initial_data(conn: sqlite3.Connection) -> None:
     # 1. Ramesh Sharma
     conn.execute(
         """
-        INSERT INTO customers (first_name, last_name, full_name, landmark, phone, opt_in_reminder, net_balance)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO customers (first_name, last_name, full_name, landmark, phone, opt_in_reminder, net_balance, owner_note)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        ("Ramesh", "Sharma", "Ramesh Sharma", "MG Road", "+91-9845011101", 1, 0),
+        ("Ramesh", "Sharma", "Ramesh Sharma", "MG Road", "+91-9845011101", 1, 0, "Regular buyer · Pays on 5th of month"),
     )
 
     # 2. Ramesh Verma (opt_in_reminder = 0)
     cur = conn.execute(
         """
-        INSERT INTO customers (first_name, last_name, full_name, landmark, phone, opt_in_reminder, net_balance)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO customers (first_name, last_name, full_name, landmark, phone, opt_in_reminder, net_balance, owner_note)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        ("Ramesh", "Verma", "Ramesh Verma", "Brigade Road", "+91-9845011102", 0, 150),
+        ("Ramesh", "Verma", "Ramesh Verma", "Brigade Road", "+91-9845011102", 0, 150, "Prefers cash payment · Brigade shopkeeper"),
     )
     verma_id = cur.lastrowid
     conn.execute(
@@ -233,10 +240,10 @@ def _seed_initial_data(conn: sqlite3.Connection) -> None:
     # 3. Suresh Gowda
     cur = conn.execute(
         """
-        INSERT INTO customers (first_name, last_name, full_name, landmark, phone, opt_in_reminder, net_balance)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO customers (first_name, last_name, full_name, landmark, phone, opt_in_reminder, net_balance, owner_note)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        ("Suresh", "Gowda", "Suresh Gowda", "Jayanagar", "+91-9845011103", 1, 280),
+        ("Suresh", "Gowda", "Suresh Gowda", "Jayanagar", "+91-9845011103", 1, 280, "Daily milk & tea supplies · Landlord reference"),
     )
     gowda_id = cur.lastrowid
     conn.execute(
@@ -259,10 +266,10 @@ def _seed_initial_data(conn: sqlite3.Connection) -> None:
     # 4. Lakshmi Devi
     conn.execute(
         """
-        INSERT INTO customers (first_name, last_name, full_name, landmark, phone, opt_in_reminder, net_balance)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO customers (first_name, last_name, full_name, landmark, phone, opt_in_reminder, net_balance, owner_note)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        ("Lakshmi", "Devi", "Lakshmi Devi", "JP Nagar", "+91-9845011104", 1, 0),
+        ("Lakshmi", "Devi", "Lakshmi Devi", "JP Nagar", "+91-9845011104", 1, 0, "Weekly groceries · Prefers morning delivery"),
     )
 
 
@@ -276,6 +283,7 @@ def create_customer(
     phone: str = "",
     opt_in_reminder: bool = True,
     opening_balance: int = 0,
+    owner_note: str = "",
     db_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """
@@ -292,6 +300,7 @@ def create_customer(
     full_name = f"{fn} {ln}".strip() if ln else fn
     lm = (landmark or "").strip() or "Local"
     ph = (phone or "").strip()
+    note_val = (owner_note or "").strip()
     if not ph:
         # Generate predictable unique phone number
         ph = f"+91-98450{abs(hash(full_name)) % 90000 + 10000}"
@@ -303,10 +312,10 @@ def create_customer(
     with get_db(db_path) as conn:
         cur = conn.execute(
             """
-            INSERT INTO customers (first_name, last_name, full_name, landmark, phone, opt_in_reminder, net_balance)
-            VALUES (?, ?, ?, ?, ?, ?, 0)
+            INSERT INTO customers (first_name, last_name, full_name, landmark, phone, opt_in_reminder, net_balance, owner_note)
+            VALUES (?, ?, ?, ?, ?, ?, 0, ?)
             """,
-            (fn, ln, full_name, lm, ph, opt_val),
+            (fn, ln, full_name, lm, ph, opt_val, note_val),
         )
         customer_id = cur.lastrowid
 
@@ -628,6 +637,7 @@ def auto_enroll_and_transact(
     landmark: str = "Local",
     phone: str = "",
     raw_note: str = "",
+    owner_note: str = "",
     db_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """
@@ -646,6 +656,7 @@ def auto_enroll_and_transact(
     full_name = f"{fn} {ln}".strip() if ln else fn
     lm = (landmark or "").strip() or "Local"
     ph = (phone or "").strip()
+    note_val = (owner_note or "").strip()
     if not ph:
         ph = f"+91-98450{abs(hash(full_name)) % 90000 + 10000}"
 
@@ -656,10 +667,10 @@ def auto_enroll_and_transact(
     with get_db(db_path) as conn:
         cur = conn.execute(
             """
-            INSERT INTO customers (first_name, last_name, full_name, landmark, phone, opt_in_reminder, net_balance)
-            VALUES (?, ?, ?, ?, ?, 1, 0)
+            INSERT INTO customers (first_name, last_name, full_name, landmark, phone, opt_in_reminder, net_balance, owner_note)
+            VALUES (?, ?, ?, ?, ?, 1, 0, ?)
             """,
-            (fn, ln, full_name, lm, ph),
+            (fn, ln, full_name, lm, ph, note_val),
         )
         cust_id = cur.lastrowid
 
@@ -755,6 +766,26 @@ def set_customer_opt_in(
         if not cust:
             raise ValueError(f"Customer id={customer_id} not found")
         return dict(cust)
+
+
+def update_customer_note(
+    customer_id: int,
+    note: str,
+    db_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """
+    Atomically update the private Kirana store owner note for a khata member.
+    """
+    clean_note = (note or "").strip()
+    with get_db(db_path) as conn:
+        cur = conn.execute(
+            "UPDATE customers SET owner_note = ? WHERE id = ?",
+            (clean_note, int(customer_id)),
+        )
+        if cur.rowcount == 0:
+            raise ValueError(f"Customer id={customer_id} not found")
+        row = conn.execute("SELECT * FROM customers WHERE id = ?", (int(customer_id),)).fetchone()
+        return dict(row)
 
 
 def build_polite_reminder(

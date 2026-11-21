@@ -62,6 +62,7 @@ INTENT_GUARDRAIL_BLOCKED = "GUARDRAIL_BLOCKED"
 INTENT_FALLBACK_HELP = "FALLBACK_HELP"
 INTENT_CUSTOMER_CREATED = "CUSTOMER_CREATED"
 INTENT_AUTO_ENROLLED_ENTRY = "AUTO_ENROLLED_ENTRY"
+INTENT_CUSTOMER_NOTE_UPDATED = "CUSTOMER_NOTE_UPDATED"
 
 # Payment trigger keywords (Hindi, Kannada, Tamil, Telugu, Marathi, English)
 _PAYMENT_KEYWORDS = {
@@ -375,6 +376,64 @@ def process_utterance(
             "has_pending_disambiguation": bool(session.pending_disambiguation),
             "dashboard": database.fetch_dashboard_state(db_path=db_path),
         }
+
+    # -----------------------------------------------------------------------
+    # Step 0.8 — Voice Customer Note Add / Update ("Ramesh ka note: Daily milk")
+    # -----------------------------------------------------------------------
+    if "note" in norm_low or "notes" in norm_low:
+        note_match = re.search(
+            r"(?:add\s+note\s+for\s+|note\s+likho\s+|note\s+karo\s+)?([a-zA-Z\s]+?)(?:\s+ka|\s+ki|\s+ke|\s+ge|\s+ku|\s+chi)?\s+note(?:\s+likho|\s+karo|\s+banao|\s*:)?\s*(.*)",
+            norm_text,
+            re.IGNORECASE,
+        )
+        if note_match:
+            cand_n = note_match.group(1).strip()
+            body = note_match.group(2).strip()
+            body = re.sub(r"^(?:likho|karo|banao|hai|:|-)\s*", "", body, flags=re.IGNORECASE).strip()
+            if cand_n and body:
+                found_custs = database.find_customers_by_name(cand_n, db_path=db_path)
+                if found_custs:
+                    target_cust = found_custs[0]
+                    updated_cust = database.update_customer_note(target_cust["id"], body, db_path=db_path)
+                    session.last_customer_id = updated_cust["id"]
+                    session.last_customer_name = updated_cust["full_name"]
+
+                    if active_lang == "kn-IN":
+                        disp = f"{updated_cust['full_name']} avara note update aagide: '{body}'"
+                        tts = f"{updated_cust['full_name']} avara note update aagide."
+                    elif active_lang == "ta-IN":
+                        disp = f"{updated_cust['full_name']} kurippu maatrrappattathu: '{body}'"
+                        tts = f"{updated_cust['full_name']} kurippu maatrrappattathu."
+                    elif active_lang == "te-IN":
+                        disp = f"{updated_cust['full_name']} note update cheyabadindhi: '{body}'"
+                        tts = f"{updated_cust['full_name']} note update cheyabadindhi."
+                    elif active_lang == "mr-IN":
+                        disp = f"{updated_cust['full_name']} chi note nondavli geli: '{body}'"
+                        tts = f"{updated_cust['full_name']} chi note nondavli geli."
+                    elif active_lang == "en-IN":
+                        disp = f"Updated note for {updated_cust['full_name']}: '{body}'"
+                        tts = f"Updated note for {updated_cust['full_name']}."
+                    else:
+                        disp = f"{updated_cust['full_name']} ka note update ho gaya: '{body}'"
+                        tts = f"{updated_cust['full_name']} ka note update ho gaya."
+
+                    intent = INTENT_CUSTOMER_NOTE_UPDATED
+                    latency_ms = (time.perf_counter() - t0) * 1000
+                    database.log_encrypted_transcript(raw_clean, disp, intent, int(latency_ms), db_path=db_path)
+                    return {
+                        "raw_transcript": raw_clean,
+                        "normalized_transcript": norm_text,
+                        "detected_language": active_lang,
+                        "intent": intent,
+                        "display_reply": disp,
+                        "tts_reply": tts,
+                        "highlight_customer_id": updated_cust["id"],
+                        "customer": updated_cust,
+                        "note_updated": True,
+                        "engine_latency_ms": round(latency_ms, 2),
+                        "has_pending_disambiguation": bool(session.pending_disambiguation),
+                        "dashboard": database.fetch_dashboard_state(db_path=db_path),
+                    }
 
     # -----------------------------------------------------------------------
     # Step 1 — Pending Homonym Resolution
