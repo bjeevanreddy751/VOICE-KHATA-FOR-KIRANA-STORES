@@ -52,10 +52,11 @@
   <!-- QRCode.js CDN for Scannable UPI Settlement QR -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <!-- Google Fonts -->
+  <!-- Google & Accent Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://db.onlinewebfonts.com/c/8cb707a9b8a73f8a7403336b861c3074?family=BubbledotICG-FinePos" rel="stylesheet">
 
   <style>
     /* Base Light Mode (Pitch Deck Aesthetic) */
@@ -166,9 +167,977 @@
     .dark ::-webkit-scrollbar-thumb {
       background: #262D3D;
     }
+
+    /* ============================================================ */
+    /* VAANIKHATA AI STARTING LOGO INTRO PRELOADER ANIMATION        */
+    /* ============================================================ */
+    :root,
+    [data-theme="daylight"] {
+      --vk-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --vk-font-dot: "BubbledotICG-FinePos", ui-monospace, SFMono-Regular, monospace;
+      --vk-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+      /* Daylight Prism Palette */
+      --vk-bg: #FAF8F5;
+      --vk-ink: #111114;
+      --vk-muted: #626270;
+      --vk-subtle: rgba(17, 17, 20, 0.46);
+
+      /* Ambient Radial Aurora Blooms */
+      --vk-bloom-1: rgba(255, 114, 58, 0.16);   /* Saffron Coral */
+      --vk-bloom-2: rgba(99, 102, 241, 0.14);   /* Electric Indigo */
+      --vk-bloom-3: rgba(6, 182, 212, 0.13);    /* Luminous Cyan */
+      --vk-bloom-4: rgba(245, 158, 11, 0.14);   /* Warm Gold */
+
+      /* Glass Medallion */
+      --vk-glass-bg: rgba(255, 255, 255, 0.76);
+      --vk-glass-border: rgba(255, 255, 255, 0.92);
+      --vk-glass-shadow:
+        0 26px 58px -16px rgba(17, 17, 20, 0.13),
+        0 10px 24px -8px rgba(249, 115, 22, 0.09),
+        inset 0 1px 1px rgba(255, 255, 255, 1),
+        inset 0 -1px 2px rgba(17, 17, 20, 0.04);
+
+      /* Rotating Conic Iridescent Prism Halo */
+      --vk-halo-gradient: conic-gradient(
+        from 0deg,
+        #FF6B35 0deg,
+        #F59E0B 72deg,
+        #06B6D4 155deg,
+        #6366F1 238deg,
+        #EC4899 308deg,
+        #FF6B35 360deg
+      );
+      --vk-halo-glow-opacity: 0.28;
+
+      /* SVG Emblem Strokes & Accents */
+      --vk-ledger-stroke: #17171D;
+      --vk-ledger-sub: rgba(23, 23, 29, 0.38);
+      --vk-spine-accent: #EA580C;
+      --vk-rupee-stroke: #17171D;
+      --vk-rupee-glow: rgba(245, 158, 11, 0.45);
+      --vk-bar-1: #FF6B35;
+      --vk-bar-2: #F59E0B;
+      --vk-bar-3: #6366F1;
+      --vk-bar-4: #06B6D4;
+
+      /* Pulse Rings & Sheen */
+      --vk-pulse-color: rgba(234, 88, 12, 0.32);
+      --vk-pulse-color-alt: rgba(99, 102, 241, 0.24);
+      --vk-sheen-color: rgba(255, 255, 255, 0.85);
+
+      /* AI Dot-Matrix Badge */
+      --vk-badge-bg: #111114;
+      --vk-badge-text: #FAF8F5;
+      --vk-badge-border: rgba(17, 17, 20, 0.14);
+      --vk-badge-shadow: 0 6px 16px -4px rgba(17, 17, 20, 0.22);
+
+      /* Telemetry Progress */
+      --vk-track-bg: rgba(17, 17, 20, 0.09);
+      --vk-fill-gradient: linear-gradient(90deg, #FF6B35 0%, #F59E0B 34%, #6366F1 70%, #06B6D4 100%);
+      --vk-tip-color: #06B6D4;
+      --vk-tip-glow: rgba(6, 182, 212, 0.72);
+      --vk-ready-dot: #10B981;
+
+      /* Glass Controls */
+      --vk-pill-bg: rgba(255, 255, 255, 0.78);
+      --vk-pill-border: rgba(17, 17, 20, 0.1);
+      --vk-pill-shadow: 0 12px 32px -10px rgba(17, 17, 20, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      --vk-pill-hover: rgba(17, 17, 20, 0.06);
+    }
+
+    .dark,
+    [data-theme="obsidian"] {
+      /* Obsidian Dark Palette */
+      --vk-bg: #000000;
+      --vk-ink: #FFFFFF;
+      --vk-muted: #9393A0;
+      --vk-subtle: rgba(255, 255, 255, 0.44);
+
+      /* Subtle Obsidian Glass Highlights */
+      --vk-bloom-1: rgba(255, 255, 255, 0.07);
+      --vk-bloom-2: rgba(251, 191, 36, 0.11);
+      --vk-bloom-3: rgba(34, 211, 238, 0.10);
+      --vk-bloom-4: rgba(148, 163, 184, 0.08);
+
+      /* Dark Frosted Medallion */
+      --vk-glass-bg: rgba(20, 20, 24, 0.74);
+      --vk-glass-border: rgba(255, 255, 255, 0.18);
+      --vk-glass-shadow:
+        0 28px 66px -12px rgba(0, 0, 0, 0.92),
+        0 0 42px -12px rgba(34, 211, 238, 0.18),
+        inset 0 1px 1px rgba(255, 255, 255, 0.22),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.6);
+
+      /* Rotating Conic Silver-Amber-Cyan Halo */
+      --vk-halo-gradient: conic-gradient(
+        from 0deg,
+        rgba(255, 255, 255, 0.92) 0deg,
+        #FBBF24 88deg,
+        #22D3EE 178deg,
+        rgba(255, 255, 255, 0.14) 265deg,
+        rgba(255, 255, 255, 0.92) 360deg
+      );
+      --vk-halo-glow-opacity: 0.34;
+
+      /* SVG Emblem Strokes & Accents */
+      --vk-ledger-stroke: #FFFFFF;
+      --vk-ledger-sub: rgba(255, 255, 255, 0.36);
+      --vk-spine-accent: #FBBF24;
+      --vk-rupee-stroke: #FFFFFF;
+      --vk-rupee-glow: rgba(251, 191, 36, 0.55);
+      --vk-bar-1: #E2E8F0;
+      --vk-bar-2: #FBBF24;
+      --vk-bar-3: #FFFFFF;
+      --vk-bar-4: #22D3EE;
+
+      /* Pulse Rings & Sheen */
+      --vk-pulse-color: rgba(255, 255, 255, 0.34);
+      --vk-pulse-color-alt: rgba(34, 211, 238, 0.26);
+      --vk-sheen-color: rgba(255, 255, 255, 0.52);
+
+      /* AI Dot-Matrix Badge */
+      --vk-badge-bg: #FFFFFF;
+      --vk-badge-text: #000000;
+      --vk-badge-border: rgba(255, 255, 255, 0.3);
+      --vk-badge-shadow: 0 0 20px rgba(255, 255, 255, 0.22);
+
+      /* Telemetry Progress */
+      --vk-track-bg: rgba(255, 255, 255, 0.13);
+      --vk-fill-gradient: linear-gradient(90deg, rgba(255, 255, 255, 0.85) 0%, #FBBF24 48%, #22D3EE 100%);
+      --vk-tip-color: #FFFFFF;
+      --vk-tip-glow: rgba(34, 211, 238, 0.85);
+      --vk-ready-dot: #34D399;
+
+      /* Glass Controls */
+      --vk-pill-bg: rgba(24, 24, 28, 0.78);
+      --vk-pill-border: rgba(255, 255, 255, 0.14);
+      --vk-pill-shadow: 0 16px 38px -8px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      --vk-pill-hover: rgba(255, 255, 255, 0.09);
+    }
+
+    body.vk-intro-active {
+      overflow: hidden !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+    }
+
+    /* Preloader Full-Viewport Shell */
+    .vk-preloader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      background-color: var(--vk-bg);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      clip-path: inset(0 0 0 0);
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0px);
+      transition:
+        background-color 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        clip-path 0.85s cubic-bezier(0.76, 0, 0.24, 1),
+        transform 0.85s cubic-bezier(0.76, 0, 0.24, 1),
+        opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+        filter 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Silky Curtain-Dissolve Exit State */
+    .vk-preloader.is-exiting {
+      clip-path: inset(0 0 100% 0);
+      transform: translateY(-28px) scale(1.015);
+      opacity: 0;
+      filter: blur(10px);
+      pointer-events: none;
+    }
+
+    /* Skip Intro Button */
+    .vk-skip-btn {
+      position: absolute;
+      top: clamp(16px, 3vh, 28px);
+      right: clamp(16px, 3vw, 28px);
+      z-index: 10;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      height: 32px;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: var(--vk-glass-bg);
+      border: 1px solid var(--vk-glass-border);
+      color: var(--vk-muted);
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      box-shadow: var(--vk-pill-shadow);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: all 0.2s ease;
+    }
+
+    .vk-skip-btn:hover {
+      color: var(--vk-ink);
+      transform: translateY(-1px);
+      background: var(--vk-pill-hover);
+    }
+
+    .vk-skip-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Ambient Radial Aurora Blooms */
+    .vk-aurora {
+      position: absolute;
+      inset: -15%;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 28% 32%, var(--vk-bloom-1) 0%, transparent 44%),
+        radial-gradient(circle at 74% 34%, var(--vk-bloom-2) 0%, transparent 46%),
+        radial-gradient(circle at 66% 72%, var(--vk-bloom-3) 0%, transparent 45%),
+        radial-gradient(circle at 34% 70%, var(--vk-bloom-4) 0%, transparent 42%);
+      filter: blur(28px);
+      animation: vkAuroraDrift 14s ease-in-out infinite alternate;
+    }
+
+    @keyframes vkAuroraDrift {
+      0% { transform: translate3d(-1.5%, -1%, 0) scale(1); }
+      50% { transform: translate3d(1.5%, 1.2%, 0) scale(1.05); }
+      100% { transform: translate3d(-0.8%, 1.8%, 0) scale(1.02); }
+    }
+
+    /* 60fps Micro-Canvas */
+    .vk-bg-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+      display: block;
+    }
+
+    /* Centered Stage Lockup */
+    .vk-stage {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      transform: translateY(-10px);
+    }
+
+    /* Emblem Zone */
+    .vk-emblem-zone {
+      position: relative;
+      width: 124px;
+      height: 124px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 30px;
+    }
+
+    /* Concentric Acoustic Pulse Rings */
+    .vk-pulse-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px solid var(--vk-pulse-color);
+      opacity: 0;
+      transform: scale(0.55);
+      pointer-events: none;
+    }
+
+    .vk-pulse-ring.r2 {
+      border-color: var(--vk-pulse-color-alt);
+    }
+
+    .vk-preloader.is-playing .vk-pulse-ring.r1 {
+      animation: vkPulseExpand 1.35s cubic-bezier(0.16, 1, 0.3, 1) 0.02s forwards;
+    }
+
+    .vk-preloader.is-playing .vk-pulse-ring.r2 {
+      animation: vkPulseExpand 1.45s cubic-bezier(0.16, 1, 0.3, 1) 0.16s forwards;
+    }
+
+    .vk-preloader.is-playing .vk-pulse-ring.r3 {
+      animation: vkPulseExpand 1.55s cubic-bezier(0.16, 1, 0.3, 1) 0.30s forwards;
+    }
+
+    @keyframes vkPulseExpand {
+      0% { opacity: 0; transform: scale(0.55); }
+      18% { opacity: 0.9; }
+      100% { opacity: 0; transform: scale(2.45); }
+    }
+
+    /* Iridescent Prism Halo Wrapper */
+    .vk-medallion-wrap {
+      position: relative;
+      width: 124px;
+      height: 124px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      transform: scale(0.45);
+    }
+
+    .vk-preloader.is-playing .vk-medallion-wrap {
+      animation: vkMedallionSpring 0.72s cubic-bezier(0.22, 1, 0.36, 1) 0.06s forwards;
+    }
+
+    @keyframes vkMedallionSpring {
+      0% { opacity: 0; transform: scale(0.42); }
+      66% { opacity: 1; transform: scale(1.045); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .vk-halo-glow {
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: var(--vk-halo-gradient);
+      opacity: var(--vk-halo-glow-opacity);
+      filter: blur(14px);
+      animation: vkHaloSpin 7.5s linear infinite;
+      pointer-events: none;
+    }
+
+    .vk-halo-ring {
+      position: absolute;
+      inset: -1.5px;
+      border-radius: 50%;
+      padding: 1.5px;
+      background: var(--vk-halo-gradient);
+      -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: vkHaloSpin 6s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes vkHaloSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Frosted Medallion */
+    .vk-medallion {
+      position: relative;
+      width: 124px;
+      height: 124px;
+      border-radius: 50%;
+      background: var(--vk-glass-bg);
+      border: 1px solid var(--vk-glass-border);
+      box-shadow: var(--vk-glass-shadow);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      transition: background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease;
+    }
+
+    .vk-medallion-sheen {
+      position: absolute;
+      inset: -20%;
+      background: linear-gradient(
+        118deg,
+        transparent 34%,
+        var(--vk-sheen-color) 49%,
+        transparent 64%
+      );
+      transform: translateX(-140%) skewX(-18deg);
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .vk-preloader.is-playing .vk-medallion-sheen {
+      animation: vkMedallionSheen 0.95s cubic-bezier(0.22, 1, 0.36, 1) 1.32s forwards;
+    }
+
+    @keyframes vkMedallionSheen {
+      0% { opacity: 0; transform: translateX(-135%) skewX(-18deg); }
+      22% { opacity: 0.72; }
+      100% { opacity: 0; transform: translateX(135%) skewX(-18deg); }
+    }
+
+    /* SVG Emblem */
+    .vk-logo-svg {
+      width: 82px;
+      height: 82px;
+      overflow: visible;
+      position: relative;
+      z-index: 2;
+    }
+
+    .vk-draw-path {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: var(--path-len, 140);
+      stroke-dashoffset: var(--path-len, 140);
+      opacity: 0;
+    }
+
+    .vk-ledger-main {
+      stroke: var(--vk-ledger-stroke);
+      stroke-width: 2.35;
+      transition: stroke 0.45s ease;
+    }
+
+    .vk-ledger-fold {
+      stroke: var(--vk-ledger-sub);
+      stroke-width: 1.65;
+      transition: stroke 0.45s ease;
+    }
+
+    .vk-ledger-spine {
+      stroke: var(--vk-spine-accent);
+      stroke-width: 2.1;
+      transition: stroke 0.45s ease;
+    }
+
+    .vk-rupee-path {
+      stroke: var(--vk-rupee-stroke);
+      stroke-width: 1.95;
+      transition: stroke 0.45s ease;
+    }
+
+    .vk-preloader.is-playing .vk-ledger-left {
+      animation: vkDrawStroke 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.40s forwards;
+    }
+
+    .vk-preloader.is-playing .vk-ledger-right {
+      animation: vkDrawStroke 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.48s forwards;
+    }
+
+    .vk-preloader.is-playing .vk-ledger-fold {
+      animation: vkDrawStroke 0.52s cubic-bezier(0.22, 1, 0.36, 1) 0.62s forwards;
+    }
+
+    .vk-preloader.is-playing .vk-ledger-spine {
+      animation: vkDrawStroke 0.42s cubic-bezier(0.22, 1, 0.36, 1) 0.72s forwards;
+    }
+
+    .vk-preloader.is-playing .vk-rupee-1 {
+      animation: vkDrawStroke 0.28s cubic-bezier(0.22, 1, 0.36, 1) 1.06s forwards;
+    }
+
+    .vk-preloader.is-playing .vk-rupee-2 {
+      animation: vkDrawStroke 0.28s cubic-bezier(0.22, 1, 0.36, 1) 1.14s forwards;
+    }
+
+    .vk-preloader.is-playing .vk-rupee-3 {
+      animation: vkDrawStroke 0.40s cubic-bezier(0.22, 1, 0.36, 1) 1.20s forwards;
+    }
+
+    @keyframes vkDrawStroke {
+      0% { opacity: 1; stroke-dashoffset: var(--path-len, 140); }
+      100% { opacity: 1; stroke-dashoffset: 0; }
+    }
+
+    .vk-rupee-aura {
+      fill: var(--vk-rupee-glow);
+      opacity: 0;
+      transform-box: fill-box;
+      transform-origin: center;
+      transform: scale(0.4);
+    }
+
+    .vk-preloader.is-playing .vk-rupee-aura {
+      animation: vkRupeeLock 0.65s cubic-bezier(0.22, 1, 0.36, 1) 1.28s forwards;
+    }
+
+    @keyframes vkRupeeLock {
+      0% { opacity: 0; transform: scale(0.4); }
+      50% { opacity: 0.75; transform: scale(1.25); }
+      100% { opacity: 0.28; transform: scale(1); }
+    }
+
+    /* Voice Equalizer Bars */
+    .vk-eq-bar {
+      fill: url(#vk-bar-grad);
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+      transform: scaleY(0);
+      opacity: 0;
+    }
+
+    .vk-preloader.is-playing .vk-eq-bar.b1 {
+      animation:
+        vkBarSpring 0.56s cubic-bezier(0.22, 1, 0.36, 1) 0.72s forwards,
+        vkBarBreathe 2.1s ease-in-out 1.48s infinite;
+    }
+
+    .vk-preloader.is-playing .vk-eq-bar.b2 {
+      animation:
+        vkBarSpring 0.58s cubic-bezier(0.22, 1, 0.36, 1) 0.79s forwards,
+        vkBarBreathe 1.9s ease-in-out 1.62s infinite;
+    }
+
+    .vk-preloader.is-playing .vk-eq-bar.b3 {
+      animation:
+        vkBarSpring 0.60s cubic-bezier(0.22, 1, 0.36, 1) 0.86s forwards,
+        vkBarBreathe 2.3s ease-in-out 1.52s infinite;
+    }
+
+    .vk-preloader.is-playing .vk-eq-bar.b4 {
+      animation:
+        vkBarSpring 0.58s cubic-bezier(0.22, 1, 0.36, 1) 0.93s forwards,
+        vkBarBreathe 1.95s ease-in-out 1.74s infinite;
+    }
+
+    .vk-preloader.is-playing .vk-eq-bar.b5 {
+      animation:
+        vkBarSpring 0.56s cubic-bezier(0.22, 1, 0.36, 1) 1.00s forwards,
+        vkBarBreathe 2.15s ease-in-out 1.66s infinite;
+    }
+
+    @keyframes vkBarSpring {
+      0% { opacity: 0; transform: scaleY(0); }
+      55% { opacity: 1; transform: scaleY(1.18); }
+      78% { opacity: 1; transform: scaleY(0.93); }
+      100% { opacity: 1; transform: scaleY(1); }
+    }
+
+    @keyframes vkBarBreathe {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(0.76); }
+    }
+
+    /* Kinetic Wordmark */
+    .vk-wordmark-row {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      padding: 4px 6px;
+    }
+
+    .vk-wordmark {
+      position: relative;
+      display: inline-flex;
+      align-items: baseline;
+      font-size: clamp(24px, 4.6vw, 34px);
+      font-weight: 700;
+      line-height: 1;
+      color: var(--vk-ink);
+      letter-spacing: 0.24em;
+      text-indent: 0.24em;
+      transition: color 0.45s ease;
+    }
+
+    .vk-preloader.is-playing .vk-wordmark {
+      animation: vkTrackingTighten 0.95s cubic-bezier(0.22, 1, 0.36, 1) 1.30s forwards;
+    }
+
+    @keyframes vkTrackingTighten {
+      from { letter-spacing: 0.24em; text-indent: 0.24em; }
+      to { letter-spacing: 0.14em; text-indent: 0.14em; }
+    }
+
+    .vk-letter {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(16px);
+      filter: blur(8px);
+      will-change: transform, opacity, filter;
+    }
+
+    .vk-preloader.is-playing .vk-letter {
+      animation: vkLetterRise 0.62s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation-delay: calc(1.30s + var(--i) * 0.044s);
+    }
+
+    @keyframes vkLetterRise {
+      0% { opacity: 0; transform: translateY(16px); filter: blur(8px); }
+      100% { opacity: 1; transform: translateY(0); filter: blur(0px); }
+    }
+
+    /* Dot-Matrix AI Badge */
+    .vk-ai-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 10px 3px;
+      border-radius: 999px;
+      background: var(--vk-badge-bg);
+      color: var(--vk-badge-text);
+      border: 1px solid var(--vk-badge-border);
+      box-shadow: var(--vk-badge-shadow);
+      font-family: var(--vk-font-dot);
+      font-size: clamp(13px, 2.2vw, 16px);
+      line-height: 1;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      transform: translateY(10px) scale(0.78);
+      filter: blur(5px);
+      transition: background 0.45s ease, color 0.45s ease, border-color 0.45s ease;
+    }
+
+    .vk-preloader.is-playing .vk-ai-badge {
+      animation: vkBadgePop 0.56s cubic-bezier(0.22, 1, 0.36, 1) 1.76s forwards;
+    }
+
+    @keyframes vkBadgePop {
+      0% { opacity: 0; transform: translateY(10px) scale(0.78); filter: blur(5px); }
+      65% { opacity: 1; transform: translateY(-1px) scale(1.06); filter: blur(0px); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
+    }
+
+    .vk-wordmark-sheen {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(
+        112deg,
+        transparent 30%,
+        var(--vk-sheen-color) 50%,
+        transparent 70%
+      );
+      transform: translateX(-130%) skewX(-20deg);
+      opacity: 0;
+      mix-blend-mode: overlay;
+    }
+
+    .vk-preloader.is-playing .vk-wordmark-sheen {
+      animation: vkWordmarkSheen 0.85s cubic-bezier(0.22, 1, 0.36, 1) 1.92s forwards;
+    }
+
+    @keyframes vkWordmarkSheen {
+      0% { opacity: 0; transform: translateX(-125%) skewX(-20deg); }
+      25% { opacity: 0.9; }
+      100% { opacity: 0; transform: translateX(125%) skewX(-20deg); }
+    }
+
+    .vk-subtitle {
+      font-size: clamp(10.5px, 1.8vw, 12px);
+      font-weight: 500;
+      letter-spacing: 0.28em;
+      text-indent: 0.28em;
+      text-transform: uppercase;
+      color: var(--vk-muted);
+      margin-bottom: 28px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: color 0.45s ease;
+    }
+
+    .vk-preloader.is-playing .vk-subtitle {
+      animation: vkFadeUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) 1.95s forwards;
+    }
+
+    @keyframes vkFadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Telemetry Progress */
+    .vk-telemetry {
+      width: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    .vk-preloader.is-playing .vk-telemetry {
+      animation: vkFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 2.12s forwards;
+    }
+
+    .vk-progress-track {
+      position: relative;
+      width: 220px;
+      height: 2px;
+      border-radius: 999px;
+      background: var(--vk-track-bg);
+      overflow: visible;
+    }
+
+    .vk-progress-fill {
+      position: relative;
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: var(--vk-fill-gradient);
+      will-change: width;
+    }
+
+    .vk-progress-fill::after {
+      content: "";
+      position: absolute;
+      right: -2px;
+      top: 50%;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      transform: translateY(-50%);
+      background: var(--vk-tip-color);
+      box-shadow: 0 0 10px 2px var(--vk-tip-glow);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .vk-progress-fill.is-active::after {
+      opacity: 1;
+    }
+
+    .vk-status-viewport {
+      position: relative;
+      height: 18px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .vk-status-cue {
+      position: absolute;
+      inset: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-family: var(--vk-font-mono);
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      color: var(--vk-muted);
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(5px);
+      transition: opacity 0.32s ease, transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .vk-status-cue.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .vk-status-cue.is-past {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+
+    .vk-status-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--vk-ready-dot);
+      box-shadow: 0 0 8px var(--vk-ready-dot);
+    }
+
+    @media (max-width: 480px) {
+      .vk-emblem-zone,
+      .vk-medallion-wrap,
+      .vk-medallion {
+        width: 112px;
+        height: 112px;
+      }
+      .vk-logo-svg {
+        width: 74px;
+        height: 74px;
+      }
+      .vk-wordmark-row {
+        gap: 8px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .vk-aurora,
+      .vk-halo-glow,
+      .vk-halo-ring,
+      .vk-pulse-ring,
+      .vk-medallion-wrap,
+      .vk-medallion-sheen,
+      .vk-draw-path,
+      .vk-rupee-aura,
+      .vk-eq-bar,
+      .vk-wordmark,
+      .vk-letter,
+      .vk-ai-badge,
+      .vk-wordmark-sheen,
+      .vk-subtitle,
+      .vk-telemetry {
+        animation: none !important;
+        transition-duration: 0.01ms !important;
+      }
+      .vk-medallion-wrap,
+      .vk-draw-path,
+      .vk-eq-bar,
+      .vk-letter,
+      .vk-ai-badge,
+      .vk-subtitle,
+      .vk-telemetry {
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        stroke-dashoffset: 0 !important;
+      }
+      .vk-wordmark {
+        letter-spacing: 0.14em !important;
+        text-indent: 0.14em !important;
+      }
+    }
   </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased">
+<body class="min-h-screen flex flex-col antialiased vk-intro-active">
+
+  <!-- ============================================================ -->
+  <!--  VAANIKHATA AI STARTING LOGO INTRO PRELOADER                 -->
+  <!-- ============================================================ -->
+  <section
+    id="vk-preloader"
+    class="vk-preloader"
+    role="status"
+    aria-live="polite"
+    aria-label="VaaniKhata AI Loading Intro"
+  >
+    <!-- Skip Intro Button -->
+    <button id="btn-skip-intro" class="vk-skip-btn" type="button" aria-label="Skip Intro Animation" title="Skip to Dashboard">
+      <span>Skip</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+
+    <!-- Ambient Radial Aurora Blooms -->
+    <div class="vk-aurora" aria-hidden="true"></div>
+
+    <!-- 60fps Micro-Canvas for Acoustic Shockwaves & Drifting Micro-Particles -->
+    <canvas id="vk-bg-canvas" class="vk-bg-canvas" aria-hidden="true"></canvas>
+
+    <!-- Center Brand Choreography Lockup -->
+    <div class="vk-stage">
+
+      <!-- STAGE 1 & STAGE 2: Ignition Rings + Glass Medallion + Self-Drawing SVG -->
+      <div class="vk-emblem-zone">
+        <span class="vk-pulse-ring r1" aria-hidden="true"></span>
+        <span class="vk-pulse-ring r2" aria-hidden="true"></span>
+        <span class="vk-pulse-ring r3" aria-hidden="true"></span>
+
+        <div class="vk-medallion-wrap">
+          <div class="vk-halo-glow" aria-hidden="true"></div>
+          <div class="vk-halo-ring" aria-hidden="true"></div>
+
+          <div class="vk-medallion">
+            <!-- Bespoke Bahi-Khata + Voice Equalizer + Rupee Crest SVG -->
+            <svg
+              id="vk-logo-svg"
+              class="vk-logo-svg"
+              viewBox="0 0 84 84"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <defs>
+                <!-- Theme-Reactive Voice Equalizer Gradient -->
+                <linearGradient id="vk-bar-grad" x1="20%" y1="100%" x2="85%" y2="0%">
+                  <stop offset="0%" stop-color="var(--vk-bar-1)" />
+                  <stop offset="35%" stop-color="var(--vk-bar-2)" />
+                  <stop offset="70%" stop-color="var(--vk-bar-3)" />
+                  <stop offset="100%" stop-color="var(--vk-bar-4)" />
+                </linearGradient>
+
+                <!-- Soft Radial Glow for Rupee Apex -->
+                <radialGradient id="vk-rupee-radial" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="var(--vk-rupee-glow)" stop-opacity="0.9" />
+                  <stop offset="100%" stop-color="var(--vk-rupee-glow)" stop-opacity="0" />
+                </radialGradient>
+              </defs>
+
+              <!-- Subtle Rupee Apex Glow -->
+              <circle class="vk-rupee-aura" cx="42" cy="16.5" r="10.5" fill="url(#vk-rupee-radial)" />
+
+              <!-- Minimal Geometric Rupee (₹) Crest Accent -->
+              <path class="vk-draw-path vk-rupee-path vk-rupee-1" d="M 37.4 11.8 L 46.6 11.8" />
+              <path class="vk-draw-path vk-rupee-path vk-rupee-2" d="M 37.4 15.0 L 46.6 15.0" />
+              <path class="vk-draw-path vk-rupee-path vk-rupee-3" d="M 39.2 11.8 C 43.4 11.8 44.3 15.6 40.9 17.5 L 38.4 18.0 L 44.4 22.2" />
+
+              <!-- Open Geometric Bahi-Khata Ledger Base -->
+              <!-- Left Symmetric Folio Wing -->
+              <path
+                class="vk-draw-path vk-ledger-main vk-ledger-left"
+                d="M 42 63.5 L 18.5 57.2 C 16.8 56.7 15.6 55.2 15.6 53.5 L 15.6 31.8 C 15.6 30.3 17.0 29.3 18.4 29.7 L 34.2 34.1"
+              />
+              <!-- Right Symmetric Folio Wing -->
+              <path
+                class="vk-draw-path vk-ledger-main vk-ledger-right"
+                d="M 42 63.5 L 65.5 57.2 C 67.2 56.7 68.4 55.2 68.4 53.5 L 68.4 31.8 C 68.4 30.3 67.0 29.3 65.6 29.7 L 49.8 34.1"
+              />
+              <!-- Secondary Layered Bahi-Khata Binding Fold -->
+              <path
+                class="vk-draw-path vk-ledger-fold"
+                d="M 21.5 62.6 L 42 68.2 L 62.5 62.6"
+              />
+              <!-- Subtle Center Spine Stitch -->
+              <path
+                class="vk-draw-path vk-ledger-spine"
+                d="M 42 56.5 L 42 68.2"
+              />
+
+              <!-- Five Dynamic Acoustic Voice Equalizer Bars -->
+              <rect class="vk-eq-bar b1" x="26.2" y="42.5" width="3.6" height="12.5" rx="1.8" />
+              <rect class="vk-eq-bar b2" x="33.1" y="34.5" width="3.8" height="21.5" rx="1.9" />
+              <rect class="vk-eq-bar b3" x="40.1" y="27.5" width="3.8" height="29.5" rx="1.9" />
+              <rect class="vk-eq-bar b4" x="47.1" y="34.5" width="3.8" height="21.5" rx="1.9" />
+              <rect class="vk-eq-bar b5" x="54.2" y="42.5" width="3.6" height="12.5" rx="1.8" />
+            </svg>
+
+            <!-- Diagonal Holographic Sheen Sweep -->
+            <div class="vk-medallion-sheen" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STAGE 3: Kinetic Letter-by-Letter Wordmark + Dot-Matrix AI Badge -->
+      <div class="vk-wordmark-row">
+        <div class="vk-wordmark" aria-label="VaaniKhata">
+          <span class="vk-letter" style="--i: 0">V</span>
+          <span class="vk-letter" style="--i: 1">A</span>
+          <span class="vk-letter" style="--i: 2">A</span>
+          <span class="vk-letter" style="--i: 3">N</span>
+          <span class="vk-letter" style="--i: 4">I</span>
+          <span class="vk-letter" style="--i: 5">K</span>
+          <span class="vk-letter" style="--i: 6">H</span>
+          <span class="vk-letter" style="--i: 7">A</span>
+          <span class="vk-letter" style="--i: 8">T</span>
+          <span class="vk-letter" style="--i: 9">A</span>
+        </div>
+        <span class="vk-ai-badge" aria-label="AI">AI</span>
+        <div class="vk-wordmark-sheen" aria-hidden="true"></div>
+      </div>
+
+      <p class="vk-subtitle">Voice-First Kirana Ledger</p>
+
+      <!-- STAGE 4: Precision Hairline Telemetry Progress & Monospace Cues -->
+      <div class="vk-telemetry">
+        <div class="vk-progress-track" aria-hidden="true">
+          <div id="vk-progress-fill" class="vk-progress-fill"></div>
+        </div>
+
+        <div class="vk-status-viewport">
+          <span id="vk-cue-0" class="vk-status-cue">PRISMA v3.0 STT</span>
+          <span id="vk-cue-1" class="vk-status-cue">INDIC NORMALIZER</span>
+          <span id="vk-cue-2" class="vk-status-cue">
+            <span class="vk-status-dot" aria-hidden="true"></span>
+            AES-256 VAULT READY
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- ============================================================ -->
   <!--  OFFLINE READ-ONLY SNAPSHOT BANNER                           -->
@@ -264,6 +1233,12 @@
         <button id="btn-reset-demo" title="Reset balances to pitch deck starting math" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-sand text-charcoal hover:bg-charcoal hover:text-white border border-charcoal-border transition">
           <span>↺</span>
           <span class="hidden md:inline">Reset</span>
+        </button>
+
+        <!-- Replay Intro Animation -->
+        <button id="btn-replay-intro" title="Replay VaaniKhata AI starting logo intro animation" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-sand text-charcoal hover:bg-charcoal hover:text-white border border-charcoal-border transition">
+          <span>✨</span>
+          <span class="hidden md:inline">Intro</span>
         </button>
 
         <!-- Light / Dark Mode Toggle -->
@@ -545,6 +1520,433 @@
 
   <!-- Hidden Audio Player for Gnani Timbre TTS -->
   <audio id="tts-audio" class="hidden"></audio>
+
+  <!-- ============================================================ -->
+  <!--  VAANIKHATA AI STARTING LOGO INTRO PRELOADER SCRIPT          -->
+  <!-- ============================================================ -->
+  <script>
+    (function () {
+      const vkState = {
+        theme: document.documentElement.classList.contains("dark") ? "obsidian" : "daylight",
+        curtainExit: true,
+        chimeEnabled: true,
+        introComplete: false,
+        timers: [],
+        progressRaf: null,
+        audioCtx: null
+      };
+
+      const preloaderEl = document.getElementById("vk-preloader");
+      const progressFillEl = document.getElementById("vk-progress-fill");
+      const cueEls = [
+        document.getElementById("vk-cue-0"),
+        document.getElementById("vk-cue-1"),
+        document.getElementById("vk-cue-2")
+      ];
+      const btnSkip = document.getElementById("btn-skip-intro");
+      const btnReplay = document.getElementById("btn-replay-intro");
+
+      function prepareSvgStrokes() {
+        const paths = document.querySelectorAll("#vk-logo-svg .vk-draw-path");
+        paths.forEach((path) => {
+          try {
+            const len = Math.ceil(path.getTotalLength()) + 2;
+            path.style.setProperty("--path-len", len);
+          } catch (err) {
+            path.style.setProperty("--path-len", 140);
+          }
+        });
+      }
+
+      // ── 60FPS Micro-Canvas Engine ──────────────────────────────
+      const bgCanvas = document.getElementById("vk-bg-canvas");
+      if (!bgCanvas) return;
+      const bgCtx = bgCanvas.getContext("2d");
+      const canvasEngine = {
+        width: 0,
+        height: 0,
+        dpr: 1,
+        particles: [],
+        shockwaves: []
+      };
+
+      const themeParticleColors = {
+        daylight: [
+          "rgba(255, 107, 53, 0.55)",
+          "rgba(99, 102, 241, 0.48)",
+          "rgba(6, 182, 212, 0.48)",
+          "rgba(245, 158, 11, 0.52)"
+        ],
+        obsidian: [
+          "rgba(255, 255, 255, 0.55)",
+          "rgba(251, 191, 36, 0.52)",
+          "rgba(34, 211, 238, 0.52)",
+          "rgba(203, 213, 225, 0.42)"
+        ]
+      };
+
+      function resizeBgCanvas() {
+        if (!bgCanvas || !bgCtx) return;
+        canvasEngine.dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvasEngine.width = window.innerWidth;
+        canvasEngine.height = window.innerHeight;
+        bgCanvas.width = canvasEngine.width * canvasEngine.dpr;
+        bgCanvas.height = canvasEngine.height * canvasEngine.dpr;
+        bgCtx.setTransform(canvasEngine.dpr, 0, 0, canvasEngine.dpr, 0, 0);
+      }
+
+      function initParticles() {
+        canvasEngine.particles = [];
+        const cx = canvasEngine.width / 2;
+        const cy = canvasEngine.height / 2 - 48;
+        for (let i = 0; i < 28; i++) {
+          const angle = (Math.PI * 2 * i) / 28 + Math.random() * 0.4;
+          const radius = 85 + Math.random() * Math.min(canvasEngine.width, canvasEngine.height) * 0.42;
+          canvasEngine.particles.push({
+            x: cx + Math.cos(angle) * radius,
+            y: cy + Math.sin(angle) * radius,
+            vx: (Math.random() - 0.5) * 0.28,
+            vy: (Math.random() - 0.5) * 0.28,
+            size: 1.4 + Math.random() * 2.2,
+            colorIdx: i % 4,
+            phase: Math.random() * Math.PI * 2,
+            speed: 0.015 + Math.random() * 0.02
+          });
+        }
+      }
+
+      function emitCanvasShockwave(strength = 1) {
+        const cx = canvasEngine.width / 2;
+        const cy = canvasEngine.height / 2 - 48;
+        canvasEngine.shockwaves.push({
+          x: cx,
+          y: cy,
+          radius: 42,
+          maxRadius: Math.max(canvasEngine.width, canvasEngine.height) * (0.42 * strength),
+          alpha: 0.44 * strength,
+          speed: 4.4 + strength * 1.4
+        });
+
+        canvasEngine.particles.forEach((p) => {
+          const dx = p.x - cx;
+          const dy = p.y - cy;
+          const dist = Math.hypot(dx, dy) || 1;
+          const force = (1.35 * strength) / Math.max(dist * 0.012, 1);
+          p.vx += (dx / dist) * force;
+          p.vy += (dy / dist) * force;
+        });
+      }
+
+      function renderBgCanvas() {
+        const currentTheme = document.documentElement.classList.contains("dark") ? "obsidian" : "daylight";
+        const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const w = canvasEngine.width;
+        const h = canvasEngine.height;
+
+        bgCtx.clearRect(0, 0, w, h);
+        const palette = themeParticleColors[currentTheme] || themeParticleColors.daylight;
+
+        for (let i = canvasEngine.shockwaves.length - 1; i >= 0; i--) {
+          const sw = canvasEngine.shockwaves[i];
+          sw.radius += sw.speed;
+          sw.speed *= 0.986;
+          const progress = sw.radius / sw.maxRadius;
+          const currentAlpha = Math.max(0, sw.alpha * (1 - progress) * (1 - progress));
+
+          if (currentAlpha <= 0.004 || progress >= 1) {
+            canvasEngine.shockwaves.splice(i, 1);
+            continue;
+          }
+
+          bgCtx.beginPath();
+          bgCtx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+          bgCtx.strokeStyle =
+            currentTheme === "daylight"
+              ? `rgba(234, 88, 12, ${currentAlpha.toFixed(3)})`
+              : `rgba(255, 255, 255, ${currentAlpha.toFixed(3)})`;
+          bgCtx.lineWidth = 1.2;
+          bgCtx.stroke();
+        }
+
+        canvasEngine.particles.forEach((p) => {
+          if (!prefersReduced) {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vx *= 0.985;
+            p.vy *= 0.985;
+            p.phase += p.speed;
+            p.x += Math.cos(p.phase) * 0.14;
+            p.y += Math.sin(p.phase * 0.9) * 0.14;
+
+            if (p.x < -20) p.x = w + 20;
+            if (p.x > w + 20) p.x = -20;
+            if (p.y < -20) p.y = h + 20;
+            if (p.y > h + 20) p.y = -20;
+          }
+
+          const twinkle = 0.52 + 0.48 * Math.sin(p.phase * 1.4);
+          const col = palette[p.colorIdx];
+          bgCtx.save();
+          bgCtx.globalAlpha = twinkle;
+          bgCtx.fillStyle = col;
+          bgCtx.shadowBlur = 10;
+          bgCtx.shadowColor = col;
+          bgCtx.beginPath();
+          bgCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          bgCtx.fill();
+          bgCtx.restore();
+        });
+
+        if (preloaderEl && preloaderEl.style.display !== "none") {
+          requestAnimationFrame(renderBgCanvas);
+        }
+      }
+
+      // ── Pure Web Audio Harmonic Chime Synth ──────────────────────
+      function ensureAudioContext() {
+        try {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) return null;
+          if (!vkState.audioCtx) {
+            vkState.audioCtx = new AudioCtx();
+          }
+          if (vkState.audioCtx.state === "suspended") {
+            vkState.audioCtx.resume().catch(() => {});
+          }
+          return vkState.audioCtx;
+        } catch (err) {
+          return null;
+        }
+      }
+
+      function playIgnitionShimmer() {
+        if (!vkState.chimeEnabled) return;
+        const ctx = ensureAudioContext();
+        if (!ctx || ctx.state !== "running") return;
+
+        const now = ctx.currentTime;
+        const master = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(1400, now);
+        filter.frequency.exponentialRampToValueAtTime(3200, now + 0.55);
+
+        master.gain.setValueAtTime(0.0001, now);
+        master.gain.linearRampToValueAtTime(0.065, now + 0.14);
+        master.gain.exponentialRampToValueAtTime(0.0001, now + 1.35);
+
+        master.connect(filter);
+        filter.connect(ctx.destination);
+
+        [261.63, 392.0, 587.33, 659.25].forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const oscGain = ctx.createGain();
+          osc.type = idx % 2 === 0 ? "sine" : "triangle";
+          osc.frequency.setValueAtTime(freq, now);
+          oscGain.gain.setValueAtTime(idx === 0 ? 0.42 : 0.24, now);
+          osc.connect(oscGain);
+          oscGain.connect(master);
+          osc.start(now + idx * 0.03);
+          osc.stop(now + 1.45);
+        });
+
+        const sub = ctx.createOscillator();
+        const subGain = ctx.createGain();
+        sub.type = "sine";
+        sub.frequency.setValueAtTime(125, now);
+        sub.frequency.exponentialRampToValueAtTime(62, now + 0.3);
+        subGain.gain.setValueAtTime(0.0001, now);
+        subGain.gain.linearRampToValueAtTime(0.055, now + 0.025);
+        subGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
+        sub.connect(subGain);
+        subGain.connect(ctx.destination);
+        sub.start(now);
+        sub.stop(now + 0.36);
+      }
+
+      function playLockInBell() {
+        if (!vkState.chimeEnabled) return;
+        const ctx = ensureAudioContext();
+        if (!ctx || ctx.state !== "running") return;
+
+        const now = ctx.currentTime;
+        const notes = [
+          { freq: 659.25, gain: 0.045, dur: 0.95, delay: 0 },
+          { freq: 987.77, gain: 0.035, dur: 0.95, delay: 0.055 },
+          { freq: 1318.51, gain: 0.022, dur: 0.85, delay: 0.11 }
+        ];
+
+        notes.forEach(({ freq, gain, dur, delay }) => {
+          const osc = ctx.createOscillator();
+          const env = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, now + delay);
+
+          env.gain.setValueAtTime(0.0001, now + delay);
+          env.gain.linearRampToValueAtTime(gain, now + delay + 0.012);
+          env.gain.exponentialRampToValueAtTime(0.0001, now + delay + dur);
+
+          osc.connect(env);
+          env.connect(ctx.destination);
+          osc.start(now + delay);
+          osc.stop(now + delay + dur + 0.05);
+        });
+      }
+
+      // ── Master Choreography ────────────────────────────────────
+      function clearScheduledIntro() {
+        vkState.timers.forEach((id) => clearTimeout(id));
+        vkState.timers = [];
+        if (vkState.progressRaf) {
+          cancelAnimationFrame(vkState.progressRaf);
+          vkState.progressRaf = null;
+        }
+      }
+
+      function setStatusCue(activeIdx) {
+        cueEls.forEach((el, idx) => {
+          if (!el) return;
+          el.classList.toggle("is-visible", idx === activeIdx);
+          el.classList.toggle("is-past", idx < activeIdx);
+        });
+      }
+
+      function triggerCurtainExit() {
+        document.body.classList.remove("vk-intro-active");
+        if (preloaderEl) {
+          preloaderEl.classList.add("is-exiting");
+          setTimeout(() => {
+            preloaderEl.style.display = "none";
+          }, 860);
+        }
+      }
+
+      function finishIntro() {
+        vkState.introComplete = true;
+        triggerCurtainExit();
+      }
+
+      function skipIntro() {
+        clearScheduledIntro();
+        vkState.introComplete = true;
+        triggerCurtainExit();
+      }
+
+      function playIntro(fromUserGesture = false) {
+        clearScheduledIntro();
+        vkState.introComplete = false;
+
+        if (fromUserGesture) {
+          ensureAudioContext();
+        }
+
+        document.body.classList.add("vk-intro-active");
+        if (preloaderEl) {
+          preloaderEl.style.display = "grid";
+          preloaderEl.classList.remove("is-exiting", "is-playing");
+          if (progressFillEl) {
+            progressFillEl.style.width = "0%";
+            progressFillEl.classList.remove("is-active");
+          }
+          setStatusCue(-1);
+
+          prepareSvgStrokes();
+          void preloaderEl.offsetWidth;
+
+          const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          preloaderEl.classList.add("is-playing");
+
+          requestAnimationFrame(renderBgCanvas);
+
+          if (prefersReduced) {
+            if (progressFillEl) progressFillEl.style.width = "100%";
+            setStatusCue(2);
+            setTimeout(finishIntro, 400);
+            return;
+          }
+
+          // STAGE 1 (0.0s–0.65s): Acoustic Ignition shockwaves + Web Audio shimmer
+          emitCanvasShockwave(1.0);
+          vkState.timers.push(setTimeout(() => playIgnitionShimmer(), 40));
+          vkState.timers.push(setTimeout(() => emitCanvasShockwave(0.75), 180));
+
+          // STAGE 3 (1.3s–2.45s): Harmonic lock-in ripple + bell ping as wordmark settles
+          vkState.timers.push(
+            setTimeout(() => {
+              emitCanvasShockwave(0.65);
+              playLockInBell();
+            }, 1720)
+          );
+
+          // STAGE 4 (2.15s–3.50s): Precision Progress Bar & Status Cues
+          vkState.timers.push(
+            setTimeout(() => {
+              if (progressFillEl) progressFillEl.classList.add("is-active");
+              setStatusCue(0);
+
+              const duration = 1350;
+              const startTime = performance.now();
+              let currentCue = 0;
+
+              function tickProgress(now) {
+                const elapsed = now - startTime;
+                const t = Math.min(elapsed / duration, 1);
+                const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                const pct = eased * 100;
+
+                if (progressFillEl) progressFillEl.style.width = `${pct.toFixed(2)}%`;
+
+                if (pct >= 38 && currentCue < 1) {
+                  currentCue = 1;
+                  setStatusCue(1);
+                } else if (pct >= 78 && currentCue < 2) {
+                  currentCue = 2;
+                  setStatusCue(2);
+                }
+
+                if (t < 1) {
+                  vkState.progressRaf = requestAnimationFrame(tickProgress);
+                } else {
+                  if (progressFillEl) {
+                    progressFillEl.style.width = "100%";
+                    progressFillEl.classList.remove("is-active");
+                  }
+                  vkState.timers.push(setTimeout(finishIntro, 200));
+                }
+              }
+
+              vkState.progressRaf = requestAnimationFrame(tickProgress);
+            }, 2150)
+          );
+        }
+      }
+
+      // ── Event Bindings ─────────────────────────────────────────
+      if (btnSkip) {
+        btnSkip.addEventListener("click", skipIntro);
+      }
+      if (btnReplay) {
+        btnReplay.addEventListener("click", () => playIntro(true));
+      }
+
+      window.addEventListener("resize", resizeBgCanvas);
+
+      function initAndStart() {
+        resizeBgCanvas();
+        initParticles();
+        playIntro(false);
+      }
+
+      if (document.readyState === "loading") {
+        window.addEventListener("DOMContentLoaded", initAndStart);
+      } else {
+        initAndStart();
+      }
+
+      window.vkPlayIntro = playIntro;
+      window.vkSkipIntro = skipIntro;
+    })();
+  </script>
 
   <!-- ============================================================ -->
   <!--  FRONTEND APPLICATION SCRIPT                                 -->
