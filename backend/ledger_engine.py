@@ -191,7 +191,7 @@ def _strip_digits_for_tts(text: str, lang: str = "hi-IN") -> str:
 
 
 # ---------------------------------------------------------------------------
-# Optional Gemini 2.5 Flash Fallback
+# Optional Gemini AI Fallback
 # ---------------------------------------------------------------------------
 def _extract_with_gemini_fallback(raw_text: str) -> Optional[dict[str, Any]]:
     """
@@ -200,29 +200,39 @@ def _extract_with_gemini_fallback(raw_text: str) -> Optional[dict[str, Any]]:
     """
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if not api_key or api_key.startswith("PASTE_"):
+        try:
+            from backend.config import get_settings
+            api_key = get_settings().gemini_api_key.strip()
+        except Exception:
+            pass
+    if not api_key or api_key.startswith("PASTE_"):
         return None
 
     try:
-        from google import genai
-        from google.genai import types
+        import httpx
+        import json
 
-        client = genai.Client(api_key=api_key)
         prompt = (
-            "Extract Kirana store ledger slots from this Hindi/Hinglish speech. "
-            "Return JSON with customer_name (string), amount (integer), "
+            "Extract Kirana store ledger slots from this Indic/Hinglish speech. "
+            "Return valid JSON object ONLY with keys: customer_name (string), amount (integer), "
             "tx_type ('CREDIT' or 'PAYMENT'), relative_day ('today', 'yesterday', 'parso').\n"
             f"Speech: '{raw_text}'"
         )
-
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-            ),
-        )
-        import json
-        return json.loads(response.text)
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key={api_key}"
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"response_mime_type": "application/json"}
+        }
+        resp = httpx.post(url, json=payload, timeout=3.5)
+        if resp.status_code == 200:
+            data = resp.json()
+            cand_text = data["candidates"][0]["content"]["parts"][0]["text"]
+            parsed = json.loads(cand_text)
+            if isinstance(parsed, list) and len(parsed) > 0 and isinstance(parsed[0], dict):
+                return parsed[0]
+            if isinstance(parsed, dict):
+                return parsed
+        return None
     except Exception:
         return None
 
