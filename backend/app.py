@@ -326,24 +326,27 @@ async def voice_websocket(
                     )
                     e2e_latency_ms = int((time.perf_counter() - t0) * 1000)
 
-                    await ws.send_json(
-                        {
-                            "type": "VOICE_RESULT",
-                            "raw_transcript": turn["raw_transcript"],
-                            "normalized_transcript": turn["normalized_transcript"],
-                            "intent": turn["intent"],
-                            "display_reply": turn["display_reply"],
-                            "tts_reply": turn["tts_reply"],
-                            "audio_b64": tts_res.get("audio_b64"),
-                            "tts_provider": tts_res.get("tts_provider", "browser_fallback"),
-                            "tts_cached": tts_res.get("tts_cached", False),
-                            "engine_latency_ms": turn["engine_latency_ms"],
-                            "latency_ms": e2e_latency_ms,
-                            "has_pending_disambiguation": turn["has_pending_disambiguation"],
-                            "detected_language": final_lang,
-                            "dashboard": turn["dashboard"],
-                        }
-                    )
+                    resp_payload = {
+                        "type": "VOICE_RESULT",
+                        "raw_transcript": turn["raw_transcript"],
+                        "normalized_transcript": turn["normalized_transcript"],
+                        "intent": turn["intent"],
+                        "display_reply": turn["display_reply"],
+                        "tts_reply": turn["tts_reply"],
+                        "audio_b64": tts_res.get("audio_b64"),
+                        "tts_provider": tts_res.get("tts_provider", "browser_fallback"),
+                        "tts_cached": tts_res.get("tts_cached", False),
+                        "engine_latency_ms": turn["engine_latency_ms"],
+                        "latency_ms": e2e_latency_ms,
+                        "has_pending_disambiguation": turn["has_pending_disambiguation"],
+                        "detected_language": final_lang,
+                        "dashboard": turn["dashboard"],
+                    }
+                    for k in ("highlight_customer_id", "customer", "timeline", "summary", "store_summary", "auto_enrolled"):
+                        if k in turn:
+                            resp_payload[k] = turn[k]
+
+                    await ws.send_json(resp_payload)
                     continue
 
                 # 4. Fast Text / Preset / WebSpeech Utterance
@@ -371,24 +374,27 @@ async def voice_websocket(
                     )
                     e2e_latency_ms = int((time.perf_counter() - t0) * 1000)
 
-                    await ws.send_json(
-                        {
-                            "type": "VOICE_RESULT",
-                            "raw_transcript": turn["raw_transcript"],
-                            "normalized_transcript": turn["normalized_transcript"],
-                            "intent": turn["intent"],
-                            "display_reply": turn["display_reply"],
-                            "tts_reply": turn["tts_reply"],
-                            "audio_b64": tts_res.get("audio_b64"),
-                            "tts_provider": tts_res.get("tts_provider", "browser_fallback"),
-                            "tts_cached": tts_res.get("tts_cached", False),
-                            "engine_latency_ms": turn["engine_latency_ms"],
-                            "latency_ms": e2e_latency_ms,
-                            "has_pending_disambiguation": turn["has_pending_disambiguation"],
-                            "detected_language": final_lang,
-                            "dashboard": turn["dashboard"],
-                        }
-                    )
+                    resp_payload = {
+                        "type": "VOICE_RESULT",
+                        "raw_transcript": turn["raw_transcript"],
+                        "normalized_transcript": turn["normalized_transcript"],
+                        "intent": turn["intent"],
+                        "display_reply": turn["display_reply"],
+                        "tts_reply": turn["tts_reply"],
+                        "audio_b64": tts_res.get("audio_b64"),
+                        "tts_provider": tts_res.get("tts_provider", "browser_fallback"),
+                        "tts_cached": tts_res.get("tts_cached", False),
+                        "engine_latency_ms": turn["engine_latency_ms"],
+                        "latency_ms": e2e_latency_ms,
+                        "has_pending_disambiguation": turn["has_pending_disambiguation"],
+                        "detected_language": final_lang,
+                        "dashboard": turn["dashboard"],
+                    }
+                    for k in ("highlight_customer_id", "customer", "timeline", "summary", "store_summary", "auto_enrolled"):
+                        if k in turn:
+                            resp_payload[k] = turn[k]
+
+                    await ws.send_json(resp_payload)
                     continue
 
     except WebSocketDisconnect:
@@ -501,7 +507,7 @@ async def voice_turn(
     tts_res = await synthesize_timbre_tts(turn["tts_reply"], language_code=active_lang, bypass_cache=is_bypass)
     e2e_latency = int((time.perf_counter() - t0) * 1000)
 
-    return {
+    ret = {
         "raw_transcript": turn["raw_transcript"],
         "normalized_transcript": turn["normalized_transcript"],
         "intent": turn["intent"],
@@ -516,6 +522,10 @@ async def voice_turn(
         "detected_language": active_lang,
         "dashboard": turn["dashboard"],
     }
+    for k in ("highlight_customer_id", "customer", "timeline", "summary", "store_summary", "auto_enrolled"):
+        if k in turn:
+            ret[k] = turn[k]
+    return ret
 
 
 @app.post("/api/customer/opt-in")

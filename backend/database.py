@@ -586,18 +586,138 @@ def get_daily_summary(
             """
             SELECT
                 COALESCE(SUM(CASE WHEN tx_type = 'CREDIT' THEN amount ELSE 0 END), 0) AS today_credit,
-                COALESCE(SUM(CASE WHEN tx_type = 'PAYMENT' THEN amount ELSE 0 END), 0) AS today_payment
+                COALESCE(SUM(CASE WHEN tx_type = 'PAYMENT' THEN amount ELSE 0 END), 0) AS today_payment,
+                COUNT(*) AS tx_count
             FROM transactions
             WHERE tx_date = ? AND status = 'ACTIVE'
             """,
             (effective_date,),
         ).fetchone()
 
+        credit = int(row["today_credit"]) if row else 0
+        payment = int(row["today_payment"]) if row else 0
+        tx_count = int(row["tx_count"]) if row else 0
+        net_cashflow = payment - credit
+
         return {
             "date": effective_date,
-            "today_credit": int(row["today_credit"]) if row else 0,
-            "today_payment": int(row["today_payment"]) if row else 0,
+            "today_credit": credit,
+            "today_payment": payment,
+            "net_cashflow": net_cashflow,
+            "transaction_count": tx_count,
         }
+
+
+def auto_enroll_and_transact(
+    candidate_name: str,
+    entries: list[dict[str, Any]],
+    landmark: str = "Local",
+    phone: str = "",
+    raw_note: str = "",
+    db_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """
+    Atomically create a new customer and record initial transaction(s)
+    in a single ACID database transaction.
+    """
+    if not entries:
+        raise ValueError("entries list cannot be empty")
+
+    toks = (candidate_name or "").strip().split()
+    if not toks:
+        raise ValueError("Customer name cannot be empty")
+
+    fn = toks[0]
+    ln = " ".join(toks[1:]) if len(toks) > 1 else ""
+    full_name = f"{fn} {ln}".strip() if ln else fn
+    lm = (landmark or "").strip() or "Local"
+    ph = (phone or "").strip()
+    if not ph:
+        ph = f"+91-98450{abs(hash(full_name)) % 90000 + 10000}"
+
+    now_utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    today_str = datetime.date.today().isoformat()
+    encrypted_note = encrypt_text(raw_note)
+
+    with get_db(db_path) as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO customers (first_name, last_name, full_name, landmark, phone, opt_in_reminder, net_balance)
+            VALUES (?, ?, ?, ?, ?, 1, 0)
+            """,
+            (fn, ln, full_name, lm, ph),
+        )
+        cust_id = cur.lastrowid
+
+        inserted_ids: list[int] = []
+        for entry in entries:
+            amount = int(entry["amount"])
+            if amount <= 0:
+                raise ValueError("Transaction amount must be strictly greater than 0")
+
+            tx_type = str(entry["tx_type"]).upper()
+            if tx_type not in ("CREDIT", "PAYMENT"):
+                raise ValueError(f"Invalid tx_type: {tx_type}. Must be 'CREDIT' or 'PAYMENT'")
+
+            tx_date = str(entry.get("tx_date") or today_str)
+            relative_label = str(entry.get("relative_label") or "Today")
+
+            tcur = conn.execute(
+                """
+                INSERT INTO transactions (
+                    customer_id, amount, tx_type, tx_date, relative_label,
+                    status, replaces_tx_id, encrypted_raw_note, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, 'ACTIVE', NULL, ?, ?)
+                """,
+                (cust_id, amount, tx_type, tx_date, relative_label, encrypted_note, now_utc),
+            )
+            inserted_ids.append(tcur.lastrowid)
+
+        new_balance = _recalculate_net_balance(conn, cust_id)
+
+        row = conn.execute("SELECT * FROM customers WHERE id = ?", (cust_id,)).fetchone()
+        cust_dict = dict(row)
+
+    return {
+        "customer": cust_dict,
+        "primary_tx_id": inserted_ids[0],
+        "inserted_ids": inserted_ids,
+        "new_balance": new_balance,
+    }
+
+
+def get_customer_with_timeline(
+    customer_id: int,
+    limit: int = 8,
+    db_path: str | Path | None = None,
+) -> dict[str, Any] | None:
+    """Fetch customer details along with decrypted recent transactions timeline."""
+    with get_db(db_path) as conn:
+        crow = conn.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
+        if not crow:
+            return None
+        cust = dict(crow)
+        trows = conn.execute(
+            """
+            SELECT * FROM transactions
+            WHERE customer_id = ?
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (customer_id, limit),
+        ).fetchall()
+
+        tx_list = []
+        for t in trows:
+            td = dict(t)
+            try:
+                td["raw_note"] = decrypt_text(td["encrypted_raw_note"])
+            except Exception:
+                td["raw_note"] = ""
+            tx_list.append(td)
+        cust["recent_transactions"] = tx_list
+        return cust
 
 
 # ---------------------------------------------------------------------------
@@ -750,6 +870,8 @@ def fetch_dashboard_state(db_path: str | Path | None = None) -> dict[str, Any]:
         "customers": customers,
         "today_credit": summary["today_credit"],
         "today_payment": summary["today_payment"],
+        "net_cashflow": summary.get("net_cashflow", summary["today_payment"] - summary["today_credit"]),
+        "transaction_count": summary.get("transaction_count", 0),
         "encrypted_transcript_count": transcript_count,
     }
 

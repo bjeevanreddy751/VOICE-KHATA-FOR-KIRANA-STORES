@@ -1297,19 +1297,30 @@
     <section class="lg:col-span-5 flex flex-col space-y-5">
 
       <!-- Today's Kirana Day-Book Summary Banner -->
-      <div class="bg-white rounded-2xl p-5 border border-charcoal-border shadow-xs">
+      <div id="store-summary-banner" class="bg-white rounded-2xl p-5 border border-charcoal-border shadow-xs transition-all duration-300">
         <div class="flex items-center justify-between pb-3 border-b border-sand">
-          <h2 class="text-xs font-bold tracking-wider uppercase text-charcoal-muted">Today's Store Summary</h2>
+          <div class="flex items-center space-x-2">
+            <span class="text-sm">📊</span>
+            <h2 class="text-xs font-bold tracking-wider uppercase text-charcoal-muted">Today's Store Summary</h2>
+          </div>
           <span id="summary-date" class="text-xs font-medium text-charcoal-muted">Today</span>
         </div>
-        <div class="grid grid-cols-2 gap-4 mt-3">
-          <div class="bg-terracotta-light/60 p-3.5 rounded-xl border border-terracotta-border/50">
-            <span class="text-[11px] font-bold text-terracotta uppercase tracking-wider block">Today's Udhaar (Credit)</span>
-            <span id="summary-today-credit" class="text-2xl font-black text-terracotta font-serif mt-1 block">₹0</span>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+          <div class="bg-terracotta-light/60 p-3 rounded-xl border border-terracotta-border/50">
+            <span class="text-[10px] font-bold text-terracotta uppercase tracking-wider block">Today's Udhaar</span>
+            <span id="summary-today-credit" class="text-xl sm:text-2xl font-black text-terracotta font-serif mt-1 block">₹0</span>
           </div>
-          <div class="bg-sage-light/60 p-3.5 rounded-xl border border-sage-border/50">
-            <span class="text-[11px] font-bold text-sage uppercase tracking-wider block">Today's Jama (Payment)</span>
-            <span id="summary-today-payment" class="text-2xl font-black text-sage font-serif mt-1 block">₹0</span>
+          <div class="bg-sage-light/60 p-3 rounded-xl border border-sage-border/50">
+            <span class="text-[10px] font-bold text-sage uppercase tracking-wider block">Today's Jama</span>
+            <span id="summary-today-payment" class="text-xl sm:text-2xl font-black text-sage font-serif mt-1 block">₹0</span>
+          </div>
+          <div class="bg-blue-50/70 p-3 rounded-xl border border-blue-200">
+            <span class="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">Net Cashflow</span>
+            <span id="summary-net-cashflow" class="text-xl sm:text-2xl font-black text-blue-800 font-serif mt-1 block">₹0</span>
+          </div>
+          <div class="bg-amber-50/70 p-3 rounded-xl border border-amber-200">
+            <span class="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">Transactions</span>
+            <span id="summary-tx-count" class="text-xl sm:text-2xl font-black text-amber-800 font-serif mt-1 block">0</span>
           </div>
         </div>
       </div>
@@ -1362,6 +1373,28 @@
           </p>
         </div>
 
+      </div>
+
+      <!-- Quick Voice Action Chips -->
+      <div class="bg-white rounded-2xl p-4 border border-charcoal-border shadow-xs">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-charcoal-muted block mb-2">⚡ Quick Voice Commands</span>
+        <div class="flex flex-wrap gap-1.5 text-xs">
+          <button onclick="sendQuickUtterance('Deepak ka 500 udhaar')" class="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-lg hover:bg-emerald-100 transition font-medium">
+            ✨ Auto-Enroll "Deepak 500 udhaar"
+          </button>
+          <button onclick="sendQuickUtterance('Vijay ka 350 jama')" class="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-lg hover:bg-emerald-100 transition font-medium">
+            ✨ Auto-Enroll "Vijay 350 jama"
+          </button>
+          <button onclick="sendQuickUtterance('Suresh ka hisaab dikhao')" class="px-2.5 py-1 bg-blue-50 text-blue-800 border border-blue-300 rounded-lg hover:bg-blue-100 transition font-medium">
+            🔍 "Suresh ka hisaab dikhao"
+          </button>
+          <button onclick="sendQuickUtterance('Aaj ka hisaab batao')" class="px-2.5 py-1 bg-purple-50 text-purple-800 border border-purple-300 rounded-lg hover:bg-purple-100 transition font-medium">
+            📊 "Aaj ka hisaab batao"
+          </button>
+          <button onclick="sendQuickUtterance('Ramesh ka 340 udhaar')" class="px-2.5 py-1 bg-sand text-charcoal border border-charcoal-border rounded-lg hover:bg-charcoal hover:text-white transition font-medium">
+            "Ramesh ka 340 udhaar"
+          </button>
+        </div>
       </div>
 
     </section>
@@ -2422,10 +2455,14 @@
           assistantBadge.textContent = data.intent.replace(/_/g, ' ');
           if (data.intent === 'GUARDRAIL_BLOCKED') {
             assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-red-100 text-terracotta border border-terracotta-border";
-          } else if (data.intent === 'HOMONYM_CLARIFICATION_REQUIRED') {
+          } else if (data.intent === 'HOMONYM_CLARIFICATION_REQUIRED' || data.intent === 'HOMONYM_CUSTOMER_SEARCH') {
             assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300";
-          } else if (data.intent === 'CUSTOMER_CREATED') {
-            assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-teal-100 text-teal-800 border border-teal-300";
+          } else if (data.intent === 'CUSTOMER_CREATED' || data.intent === 'AUTO_ENROLLED_ENTRY') {
+            assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300";
+          } else if (data.intent === 'CUSTOMER_SEARCH') {
+            assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-300";
+          } else if (data.intent === 'DAILY_SUMMARY_QUERY') {
+            assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-300";
           } else {
             assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-sage-light text-sage border border-sage-border";
           }
@@ -2439,6 +2476,17 @@
           // Render live ledger cards
           if (data.dashboard) renderDashboard(data.dashboard);
 
+          // Auto-scroll & Highlight Customer Card or Store Summary
+          if (data.highlight_customer_id) {
+            setTimeout(() => {
+              highlightCustomerCard(data.highlight_customer_id, data.intent === 'AUTO_ENROLLED_ENTRY');
+            }, 80);
+          } else if (data.intent === 'DAILY_SUMMARY_QUERY') {
+            setTimeout(() => {
+              highlightStoreSummary();
+            }, 80);
+          }
+
           // Play Audio (or browser speech synthesis fallback)
           if (data.audio_b64) {
             playAudioBase64(data.audio_b64);
@@ -2450,6 +2498,140 @@
           }
         }
       }
+
+      // ── Physical Kirana Soundbox Chime (Web Audio API) ──────
+      function playTallyChime(type = 'chime') {
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContext) return;
+          const ctx = new AudioContext();
+          const now = ctx.currentTime;
+          
+          if (type === 'enroll') {
+            [523.25, 659.25, 783.99].forEach((freq, idx) => {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+              gain.gain.setValueAtTime(0.12, now + idx * 0.08);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.35);
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start(now + idx * 0.08);
+              osc.stop(now + idx * 0.08 + 0.35);
+            });
+          } else if (type === 'search') {
+            [587.33, 880.0].forEach((freq, idx) => {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+              gain.gain.setValueAtTime(0.12, now + idx * 0.1);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.3);
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start(now + idx * 0.1);
+              osc.stop(now + idx * 0.1 + 0.3);
+            });
+          } else if (type === 'summary') {
+            [440.0, 554.37, 659.25, 880.0].forEach((freq, idx) => {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+              gain.gain.setValueAtTime(0.14, now + idx * 0.07);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.4);
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start(now + idx * 0.07);
+              osc.stop(now + idx * 0.07 + 0.4);
+            });
+          }
+        } catch (e) {
+          // AudioContext might be blocked until user gesture, ignore safely
+        }
+      }
+
+      // ── Highlight / Scroll Helpers ────────────────────────────
+      window.highlightCustomerCard = function(customerId, isNew = false) {
+        const card = document.getElementById('customer-card-' + customerId);
+        if (!card) return;
+
+        document.querySelectorAll('.customer-card-highlighted').forEach(el => {
+          el.classList.remove('customer-card-highlighted', 'ring-4', 'ring-emerald-400', 'ring-amber-400', 'bg-emerald-50/60', 'bg-amber-50/60', 'scale-[1.02]', 'shadow-xl');
+        });
+
+        card.classList.add(
+          'customer-card-highlighted',
+          'ring-4',
+          isNew ? 'ring-emerald-400' : 'ring-amber-400',
+          isNew ? 'bg-emerald-50/50' : 'bg-amber-50/50',
+          'scale-[1.02]',
+          'shadow-xl'
+        );
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        playTallyChime(isNew ? 'enroll' : 'search');
+
+        if (isNew) {
+          showToast('✨ Auto-Enrolled customer & logged transaction!');
+        }
+
+        setTimeout(() => {
+          card.classList.remove('ring-4', 'ring-emerald-400', 'ring-amber-400', 'bg-emerald-50/50', 'bg-amber-50/50', 'scale-[1.02]', 'shadow-xl');
+        }, 4500);
+      };
+
+      window.highlightStoreSummary = function() {
+        const banner = document.getElementById('store-summary-banner');
+        if (!banner) return;
+        banner.classList.add('ring-4', 'ring-purple-400', 'bg-purple-50/50', 'scale-[1.01]', 'shadow-xl');
+        banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        playTallyChime('summary');
+        showToast('📊 Daily Store Tally computed!');
+        setTimeout(() => {
+          banner.classList.remove('ring-4', 'ring-purple-400', 'bg-purple-50/50', 'scale-[1.01]', 'shadow-xl');
+        }, 4500);
+      };
+
+      window.sendQuickUtterance = function(text) {
+        if (!text) return;
+        userTranscript.textContent = `"${text}"`;
+        assistantBadge.textContent = 'Processing...';
+        assistantBadge.className = 'px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300';
+        
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: 'UTTERANCE',
+            text: text,
+            language: selectedLanguage
+          }));
+        } else {
+          vkFetch('/api/voice-turn', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text, language: selectedLanguage })
+          })
+          .then(res => res.json())
+          .then(data => {
+            lastVoiceResult = data;
+            userTranscript.textContent = `"${data.raw_transcript}"`;
+            assistantText.textContent = data.display_reply;
+            assistantBadge.textContent = data.intent.replace(/_/g, ' ');
+            if (data.dashboard) renderDashboard(data.dashboard);
+            if (data.highlight_customer_id) {
+              setTimeout(() => highlightCustomerCard(data.highlight_customer_id, data.intent === 'AUTO_ENROLLED_ENTRY'), 80);
+            } else if (data.intent === 'DAILY_SUMMARY_QUERY') {
+              setTimeout(() => highlightStoreSummary(), 80);
+            }
+            if (data.audio_b64) playAudioBase64(data.audio_b64);
+          })
+          .catch(err => {
+            console.error("Quick utterance failed:", err);
+            showToast("Failed to process command", true);
+          });
+        }
+      };
 
       // ── Dashboard Rendering ───────────────────────────────────
       function renderDashboard(dashboard, saveSnapshot = true) {
@@ -2470,6 +2652,20 @@
 
         summaryTodayCredit.textContent = `₹${dashboard.today_credit || 0}`;
         summaryTodayPayment.textContent = `₹${dashboard.today_payment || 0}`;
+        const netFlowEl = document.getElementById('summary-net-cashflow');
+        if (netFlowEl) {
+          const netVal = dashboard.net_cashflow !== undefined 
+            ? dashboard.net_cashflow 
+            : ((dashboard.today_payment || 0) - (dashboard.today_credit || 0));
+          netFlowEl.textContent = (netVal >= 0 ? '+₹' : '-₹') + Math.abs(netVal);
+          netFlowEl.className = `text-xl sm:text-2xl font-black font-serif mt-1 block ${netVal >= 0 ? 'text-blue-800' : 'text-terracotta'}`;
+        }
+        const txCountEl = document.getElementById('summary-tx-count');
+        if (txCountEl) {
+          txCountEl.textContent = dashboard.transaction_count !== undefined 
+            ? dashboard.transaction_count 
+            : 0;
+        }
         purgeBadge.textContent = dashboard.encrypted_transcript_count || 0;
 
         const countBadge = document.getElementById('accounts-count-badge');
@@ -2485,7 +2681,7 @@
           const isZero = bal === 0;
 
           return `
-            <div class="bg-white rounded-2xl p-5 border border-charcoal-border shadow-xs hover:border-terracotta-border transition">
+            <div id="customer-card-${c.id}" data-customer-id="${c.id}" class="customer-card bg-white rounded-2xl p-5 border border-charcoal-border shadow-xs hover:border-terracotta-border transition-all duration-300">
               <div class="flex items-start justify-between gap-2">
                 <div>
                   <div class="flex items-center space-x-2">
