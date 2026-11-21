@@ -395,6 +395,32 @@ def find_customers_by_name(query: str, db_path: str | Path | None = None) -> lis
         return [dict(r) for r in rows]
 
 
+def get_keyterm_roster(limit: int = 200, db_path: str | Path | None = None) -> list[str]:
+    """
+    Return deduplicated customer first names, last names, full names, and landmarks,
+    capped strictly at `limit` terms (default 200). Used for Prisma STT dynamic vocabulary boosting.
+    """
+    if limit <= 0:
+        return []
+
+    terms: list[str] = []
+    seen: set[str] = set()
+
+    with get_db(db_path) as conn:
+        rows = conn.execute(
+            "SELECT first_name, last_name, full_name, landmark FROM customers ORDER BY id ASC"
+        ).fetchall()
+        for row in rows:
+            for field in ("first_name", "last_name", "full_name", "landmark"):
+                val = (row[field] or "").strip()
+                if val and val.lower() not in seen:
+                    seen.add(val.lower())
+                    terms.append(val)
+                    if len(terms) >= limit:
+                        return terms
+    return terms
+
+
 def _recalculate_net_balance(conn: sqlite3.Connection, customer_id: int) -> int:
     """Strictly calculate net balance from active transactions and update customer row."""
     row = conn.execute(

@@ -203,11 +203,12 @@ def run_all_tests() -> bool:
             # TEST 5: Barge-In Interruption
             # ---------------------------------------------------------------
             _banner("TEST 5: Sub-80ms Barge-In Audio Cancellation")
-            ws.send_json({"type": "BARGE_IN"})
+            ws.send_json({"type": "BARGE_IN", "client_halt_ms": 14.2})
             barge_resp = ws.receive_json()
             _info(f"Barge-in response: {barge_resp}")
             assert barge_resp["type"] == "TTS_HALTED"
-            assert "<80ms" in barge_resp["status"]
+            assert barge_resp["status"] == "Audio cancelled"
+            assert barge_resp.get("client_halt_ms") == 14.2
             _ok("Barge-in cancellation confirmed with immediate TTS_HALTED response")
             passed += 1
 

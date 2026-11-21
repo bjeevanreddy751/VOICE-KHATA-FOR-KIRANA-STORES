@@ -125,6 +125,7 @@ async def synthesize_timbre_tts(
     tts_text: str,
     language_code: str = "hi-IN",
     cancel_event: Optional[asyncio.Event] = None,
+    bypass_cache: bool = False,
 ) -> dict[str, Any]:
     """
     Stream synthesis from Gnani Timbre v3.0 via WebSocket.
@@ -134,11 +135,18 @@ async def synthesize_timbre_tts(
         "audio_b64": base64_wav_str | None,
         "tts_provider": "gnani_timbre_v3.0" | "browser_fallback",
         "ttfa_ms": int,
-        "status": "ok" | "cancelled" | "fallback"
+        "status": "ok" | "cancelled" | "fallback",
+        "tts_cached": bool
       }
     """
     if not tts_text or not tts_text.strip():
-        return {"audio_b64": None, "tts_provider": "browser_fallback", "ttfa_ms": 0, "status": "empty"}
+        return {
+            "audio_b64": None,
+            "tts_provider": "browser_fallback",
+            "ttfa_ms": 0,
+            "status": "empty",
+            "tts_cached": False,
+        }
 
     try:
         settings = get_settings()
@@ -152,26 +160,30 @@ async def synthesize_timbre_tts(
         voice = "Avinash"
         model = "timbre-v3.0"
 
+    cache_key = f"{model}:{voice}:{language_code}:{tts_text.strip()}"
+
     # Credit & Latency Saver 1: In-memory cache
-    if tts_text in _DISCLOSURE_AUDIO_CACHE:
+    if not bypass_cache and cache_key in _DISCLOSURE_AUDIO_CACHE:
         return {
-            "audio_b64": _DISCLOSURE_AUDIO_CACHE[tts_text],
+            "audio_b64": _DISCLOSURE_AUDIO_CACHE[cache_key],
             "tts_provider": "gnani_timbre_v3.0",
             "ttfa_ms": 10,
             "status": "cached",
+            "tts_cached": True,
         }
 
     # Credit & Latency Saver 2: Disk-persistent WAV TTS cache
     cache_file = _get_cache_file(model, voice, language_code, tts_text)
-    if cache_file.exists():
+    if not bypass_cache and cache_file.exists():
         try:
             cached_b64 = cache_file.read_text(encoding="utf-8")
-            _DISCLOSURE_AUDIO_CACHE[tts_text] = cached_b64
+            _DISCLOSURE_AUDIO_CACHE[cache_key] = cached_b64
             return {
                 "audio_b64": cached_b64,
                 "tts_provider": "gnani_timbre_v3.0",
                 "ttfa_ms": 5,
                 "status": "cached_disk",
+                "tts_cached": True,
             }
         except Exception:
             pass
@@ -183,6 +195,7 @@ async def synthesize_timbre_tts(
             "tts_provider": "browser_fallback",
             "ttfa_ms": 0,
             "status": "dev_mode",
+            "tts_cached": False,
         }
 
     if not is_gnani_configured():
@@ -191,6 +204,7 @@ async def synthesize_timbre_tts(
             "tts_provider": "browser_fallback",
             "ttfa_ms": 0,
             "status": "fallback",
+            "tts_cached": False,
         }
 
     headers = {"X-API-Key-ID": api_key}
@@ -223,7 +237,7 @@ async def synthesize_timbre_tts(
             ) as ws:
                 # Check immediate barge-in before send
                 if cancel_event and cancel_event.is_set():
-                    return {"audio_b64": None, "tts_provider": "gnani_timbre_v3.0", "ttfa_ms": 0, "status": "cancelled"}
+                    return {"audio_b64": None, "tts_provider": "gnani_timbre_v3.0", "ttfa_ms": 0, "status": "cancelled", "tts_cached": False}
 
                 await ws.send(json.dumps(request_payload))
 
@@ -236,6 +250,7 @@ async def synthesize_timbre_tts(
                             "tts_provider": "gnani_timbre_v3.0",
                             "ttfa_ms": ttfa_ms or int((time.perf_counter() - t0) * 1000),
                             "status": "cancelled",
+                            "tts_cached": False,
                         }
 
                     try:
@@ -278,7 +293,7 @@ async def synthesize_timbre_tts(
                             pass
 
             if not pcm_buffer:
-                return {"audio_b64": None, "tts_provider": "browser_fallback", "ttfa_ms": 0, "status": "fallback"}
+                return {"audio_b64": None, "tts_provider": "browser_fallback", "ttfa_ms": 0, "status": "fallback", "tts_cached": False}
 
             wav_bytes = _pcm_to_wav(bytes(pcm_buffer))
             audio_b64 = base64.b64encode(wav_bytes).decode("ascii")
@@ -290,13 +305,14 @@ async def synthesize_timbre_tts(
                 logger.warning(f"Failed to write TTS cache file: {e}")
 
             # Cache in memory for instant replay
-            _DISCLOSURE_AUDIO_CACHE[tts_text] = audio_b64
+            _DISCLOSURE_AUDIO_CACHE[cache_key] = audio_b64
 
             return {
                 "audio_b64": audio_b64,
                 "tts_provider": "gnani_timbre_v3.0",
                 "ttfa_ms": ttfa_ms,
                 "status": "ok",
+                "tts_cached": False,
             }
 
     except Exception as exc:
@@ -306,6 +322,7 @@ async def synthesize_timbre_tts(
             "tts_provider": "browser_fallback",
             "ttfa_ms": 0,
             "status": "fallback",
+            "tts_cached": False,
         }
 
 
@@ -320,7 +337,13 @@ class PrismaSTTClient:
     """
     MAX_RECORDING_SECONDS = 12.0
 
-    def __init__(self, ws_url: Optional[str] = None, api_key: Optional[str] = None, language: Optional[str] = None):
+    def __init__(
+        self,
+        ws_url: Optional[str] = None,
+        api_key: Optional[str] = None,
+        language: Optional[str] = None,
+        keywords: Optional[list[str]] = None,
+    ):
         try:
             settings = get_settings()
             self.api_key = api_key or settings.gnani_api_key
@@ -334,6 +357,7 @@ class PrismaSTTClient:
             self.language = language or "hi-IN"
             self.model = "prisma-v3.0"
 
+        self.keywords: list[str] = list(keywords) if keywords else []
         self.ws: Optional[websockets.WebSocketClientProtocol] = None
         self._connected = False
         self._stream_start_time: float = 0.0
@@ -344,8 +368,11 @@ class PrismaSTTClient:
             return False
         return (time.perf_counter() - self._stream_start_time) >= self.MAX_RECORDING_SECONDS
 
-    async def connect(self) -> bool:
+    async def connect(self, keywords: Optional[list[str]] = None) -> bool:
         """Establish secure WebSocket to Prisma STT with required connection headers."""
+        if keywords is not None:
+            self.keywords = list(keywords)
+
         if is_dev_mode():
             logger.info("Gnani DEV_MODE is active; skipping live Prisma STT connection to protect credits.")
             return False
@@ -361,9 +388,17 @@ class PrismaSTTClient:
             "sample_rate": "16000",
         }
 
+        connect_url = self.ws_url
+        if self.keywords:
+            from urllib.parse import quote
+            kw_str = ",".join(self.keywords)
+            headers["keywords"] = kw_str
+            sep = "&" if "?" in self.ws_url else "?"
+            connect_url = f"{self.ws_url}{sep}keywords={quote(kw_str)}"
+
         try:
             self.ws = await websockets.connect(
-                self.ws_url,
+                connect_url,
                 additional_headers=headers,
                 open_timeout=STT_CONNECT_TIMEOUT,
                 close_timeout=2.0,

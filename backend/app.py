@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Optional
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Header, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -43,8 +43,21 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _FRONTEND_DIR = _PROJECT_ROOT / "frontend"
 _INDEX_HTML = _FRONTEND_DIR / "index.html"
 
-# Global REST session state for stateless API testing
-_REST_SESSION = SessionState()
+# Isolated REST session states by session ID (X-Session-ID header)
+_REST_SESSIONS: dict[str, SessionState] = {}
+
+
+def get_rest_session(session_id: Optional[str] = None) -> SessionState:
+    """
+    Retrieve or initialize isolated SessionState for the given session_id.
+    Guarantees two simultaneous tabs/judges never overwrite each other's state.
+    """
+    sid = (session_id or "default").strip()
+    if not sid:
+        sid = "default"
+    if sid not in _REST_SESSIONS:
+        _REST_SESSIONS[sid] = SessionState()
+    return _REST_SESSIONS[sid]
 
 # Mandatory Turn-1 AI Disclosure text (Responsible AI Baseline)
 DISCLOSURE_TEXT = (
@@ -137,18 +150,27 @@ async def root():
 # Full-Duplex Voice WebSocket (/ws/voice)
 # ---------------------------------------------------------------------------
 @app.websocket("/ws/voice")
-async def voice_websocket(ws: WebSocket):
+async def voice_websocket(
+    ws: WebSocket,
+    session_id: Optional[str] = Query(None),
+    live: Optional[str] = Query(None),
+):
     """
     Full-duplex WebSocket orchestrating:
       - Mandatory Turn-1 AI Disclosure (synthesized or cached)
       - Push-to-Talk PCM binary audio streaming to Gnani Prisma v3.0 STT
       - Text / WebSpeech fallback utterances
-      - Sub-80ms Barge-In speech cancellation
+      - Real client-side Barge-In speech cancellation
       - Live stateful ledger engine processing and Timbre v3.0 TTS output
     """
     await ws.accept()
 
-    session = SessionState()
+    # Query param detection (?live=1 & ?session_id=...)
+    live_param = ws.query_params.get("live", live or "")
+    bypass_cache = str(live_param).lower() in ("1", "true", "yes")
+    ws_session_id = ws.query_params.get("session_id", session_id or "")
+
+    session = get_rest_session(ws_session_id) if ws_session_id else SessionState()
     prisma_client: Optional[PrismaSTTClient] = None
     tts_cancel_event = asyncio.Event()
 
@@ -159,6 +181,7 @@ async def voice_websocket(ws: WebSocket):
             DISCLOSURE_TEXT,
             language_code="hi-IN",
             cancel_event=tts_cancel_event,
+            bypass_cache=bypass_cache,
         )
         dashboard = database.fetch_dashboard_state()
 
@@ -169,6 +192,7 @@ async def voice_websocket(ws: WebSocket):
                 "tts_reply": DISCLOSURE_TEXT,
                 "audio_b64": tts_res.get("audio_b64"),
                 "tts_provider": tts_res.get("tts_provider", "browser_fallback"),
+                "tts_cached": tts_res.get("tts_cached", False),
                 "dashboard": dashboard,
             }
         )
@@ -211,6 +235,7 @@ async def voice_websocket(ws: WebSocket):
                         disc_text,
                         language_code=disclosure_lang,
                         cancel_event=tts_cancel_event,
+                        bypass_cache=bypass_cache,
                     )
                     await ws.send_json(
                         {
@@ -220,6 +245,7 @@ async def voice_websocket(ws: WebSocket):
                             "tts_reply": disc_text,
                             "audio_b64": tts_res.get("audio_b64"),
                             "tts_provider": tts_res.get("tts_provider", "browser_fallback"),
+                            "tts_cached": tts_res.get("tts_cached", False),
                         }
                     )
                     continue
@@ -227,10 +253,12 @@ async def voice_websocket(ws: WebSocket):
                 # 1. Immediate Barge-In Cancellation
                 if action == "BARGE_IN":
                     tts_cancel_event.set()
+                    echoed_halt_ms = payload.get("client_halt_ms")
                     await ws.send_json(
                         {
                             "type": "TTS_HALTED",
-                            "status": "Audio cancelled (<80ms)",
+                            "client_halt_ms": echoed_halt_ms,
+                            "status": "Audio cancelled",
                         }
                     )
                     continue
@@ -245,8 +273,9 @@ async def voice_websocket(ws: WebSocket):
 
                     if is_gnani_configured():
                         sel_lang = session.preferred_language if session.preferred_language != "auto" else "hi-IN"
-                        prisma_client = PrismaSTTClient(language=sel_lang)
-                        connected = await prisma_client.connect()
+                        keyterms = database.get_keyterm_roster(limit=200)
+                        prisma_client = PrismaSTTClient(language=sel_lang, keywords=keyterms)
+                        connected = await prisma_client.connect(keywords=keyterms)
                         stt_provider = "gnani_prisma_v3.0" if connected else "browser_fallback"
                     else:
                         prisma_client = None
@@ -287,11 +316,13 @@ async def voice_websocket(ws: WebSocket):
                     final_lang = turn.get("detected_language") or detected_lang
 
                     # Synthesize reply via Gnani Timbre v3.0
+                    turn_bypass = bool(payload.get("bypass_cache", False)) or bypass_cache
                     tts_cancel_event = asyncio.Event()
                     tts_res = await synthesize_timbre_tts(
                         turn["tts_reply"],
                         language_code=final_lang,
                         cancel_event=tts_cancel_event,
+                        bypass_cache=turn_bypass,
                     )
                     e2e_latency_ms = int((time.perf_counter() - t0) * 1000)
 
@@ -305,6 +336,7 @@ async def voice_websocket(ws: WebSocket):
                             "tts_reply": turn["tts_reply"],
                             "audio_b64": tts_res.get("audio_b64"),
                             "tts_provider": tts_res.get("tts_provider", "browser_fallback"),
+                            "tts_cached": tts_res.get("tts_cached", False),
                             "engine_latency_ms": turn["engine_latency_ms"],
                             "latency_ms": e2e_latency_ms,
                             "has_pending_disambiguation": turn["has_pending_disambiguation"],
@@ -330,10 +362,12 @@ async def voice_websocket(ws: WebSocket):
                         else (req_lang or "hi-IN")
                     )
 
+                    turn_bypass = bool(payload.get("bypass_cache", False)) or bypass_cache
                     tts_res = await synthesize_timbre_tts(
                         turn["tts_reply"],
                         language_code=final_lang,
                         cancel_event=tts_cancel_event,
+                        bypass_cache=turn_bypass,
                     )
                     e2e_latency_ms = int((time.perf_counter() - t0) * 1000)
 
@@ -347,6 +381,7 @@ async def voice_websocket(ws: WebSocket):
                             "tts_reply": turn["tts_reply"],
                             "audio_b64": tts_res.get("audio_b64"),
                             "tts_provider": tts_res.get("tts_provider", "browser_fallback"),
+                            "tts_cached": tts_res.get("tts_cached", False),
                             "engine_latency_ms": turn["engine_latency_ms"],
                             "latency_ms": e2e_latency_ms,
                             "has_pending_disambiguation": turn["has_pending_disambiguation"],
@@ -371,6 +406,7 @@ async def voice_websocket(ws: WebSocket):
 class VoiceTurnRequest(BaseModel):
     text: str
     language: str = "hi-IN"
+    bypass_cache: bool = False
 
 
 class OptInRequest(BaseModel):
@@ -449,13 +485,20 @@ async def delete_customer(customer_id: int):
 
 
 @app.post("/api/voice-turn")
-async def voice_turn(req: VoiceTurnRequest):
+async def voice_turn(
+    req: VoiceTurnRequest,
+    live: Optional[str] = None,
+    bypass_cache: Optional[bool] = None,
+    x_session_id: Optional[str] = Header(None, alias="X-Session-ID"),
+):
     """Run a single conversational turn via REST and return result + TTS audio."""
-    global _REST_SESSION
+    session = get_rest_session(x_session_id)
+    live_param = str(live or "").strip().lower()
+    is_bypass = bool(req.bypass_cache or bypass_cache or (live_param in ("1", "true", "yes")))
     t0 = time.perf_counter()
-    turn = process_utterance(req.text, _REST_SESSION)
+    turn = process_utterance(req.text, session)
     active_lang = turn.get("detected_language") or req.language
-    tts_res = await synthesize_timbre_tts(turn["tts_reply"], language_code=active_lang)
+    tts_res = await synthesize_timbre_tts(turn["tts_reply"], language_code=active_lang, bypass_cache=is_bypass)
     e2e_latency = int((time.perf_counter() - t0) * 1000)
 
     return {
@@ -466,6 +509,7 @@ async def voice_turn(req: VoiceTurnRequest):
         "tts_reply": turn["tts_reply"],
         "audio_b64": tts_res.get("audio_b64"),
         "tts_provider": tts_res.get("tts_provider", "browser_fallback"),
+        "tts_cached": tts_res.get("tts_cached", False),
         "engine_latency_ms": turn["engine_latency_ms"],
         "latency_ms": e2e_latency,
         "has_pending_disambiguation": turn["has_pending_disambiguation"],
@@ -519,10 +563,16 @@ async def purge_logs():
 
 
 @app.post("/api/demo/reset")
-async def reset_demo():
+async def reset_demo(
+    x_session_id: Optional[str] = Header(None, alias="X-Session-ID"),
+):
     """Wipe and re-seed database with synthetic data for live judge demonstration."""
-    global _REST_SESSION
-    _REST_SESSION = SessionState()
+    sid = (x_session_id or "default").strip()
+    if sid and sid != "default":
+        _REST_SESSIONS[sid] = SessionState()
+    else:
+        _REST_SESSIONS.clear()
+        _REST_SESSIONS["default"] = SessionState()
     database.reset_demo_db()
     return {
         "status": "reset",
