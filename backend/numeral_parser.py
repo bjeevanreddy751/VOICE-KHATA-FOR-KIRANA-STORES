@@ -720,3 +720,198 @@ def number_to_spoken_words(amount: int, lang: str = "hi-IN") -> str:
         return _number_to_english(amount)
     else:
         return number_to_spoken_hindi(amount)
+
+
+# ---------------------------------------------------------------------------
+# Indic Script to Latin Transliteration Engine
+# ---------------------------------------------------------------------------
+_INDIC_PHRASE_MAP: list[tuple[str, str]] = [
+    # Hindi phrases
+    ("कर दो", "kar do"),
+    ("कर देना", "kar dena"),
+    ("कर दीजिए", "kar dijiye"),
+    ("नया कस्टमर", "naya customer"),
+    ("नया ग्राहक", "naya customer"),
+    ("नया खाता खोलो", "naya khata kholo"),
+    ("खाता खोलो", "khata kholo"),
+    ("खाता बनाओ", "khata banao"),
+    ("खाते में", "khaate mein"),
+    ("कुल बाकी", "kul baaki"),
+    ("कितना बाकी", "kitna baaki"),
+    ("कितना हुआ", "kitna hua"),
+    ("उधार गया", "udhaar gaya"),
+    ("आज का", "aaj ka"),
+    ("अरे नहीं", "arre nahi"),
+    # Kannada phrases
+    ("ಹೊಸ ಗ್ರಾಹಕ", "hosa grahaka"),
+    ("ಹೊಸ ಖಾತೆ", "hosa khaate"),
+    ("ಖಾತೆ ತೆರೆ", "khaate tere"),
+    # Tamil phrases
+    ("புதிய வாடிக்கையாளர்", "pudhiya customer"),
+    ("புதிய கணக்கு", "pudhiya kanakku"),
+    # Telugu phrases
+    ("కొత్త కస్టమర్", "kottha customer"),
+    ("కొత్త ఖాతా", "kottha khata"),
+]
+
+_INDIC_WORD_MAP: dict[str, str] = {
+    # Devanagari Customer Names
+    "रमेश": "ramesh", "रमेंश": "ramesh", "शर्मा": "sharma", "वर्मा": "verma",
+    "सुरेश": "suresh", "गौड़ा": "gowda", "गौडा": "gowda", "लक्ष्मी": "lakshmi",
+    "देवी": "devi", "किरण": "kiran", "कुमार": "kumar", "अमित": "amit",
+    "राजेश": "rajesh", "प्रिया": "priya", "अंजली": "anjali", "राहुल": "rahul",
+    "सुनील": "sunil", "अनिल": "anil", "विकास": "vikas", "पूजा": "pooja",
+    "दीपक": "deepak", "मनोज": "manoj", "संजय": "sanjay", "विजय": "vijay",
+    "अजय": "ajay", "रोहित": "rohit", "सचिन": "sachin", "गौरव": "gaurav",
+    "नीरज": "neeraj", "वसीम": "waseem", "मोहम्मद": "mohammed", "खान": "khan",
+    "पटेल": "patel", "सिंह": "singh", "गुप्ता": "gupta", "रेड्डी": "reddy",
+
+    # Devanagari Ledger & Retail Keywords
+    "उधार": "udhaar", "उधारी": "udhaari", "कल": "kal", "दिया": "diya",
+    "दिए": "diye", "दी": "di", "था": "tha", "थी": "thi", "थे": "the",
+    "जमा": "jama", "नहीं": "nahi", "नही": "nahi", "गलत": "galat",
+    "कर": "kar", "दो": "do", "करो": "karo", "दीजिए": "dijiye",
+    "आज": "aaj", "टोटल": "total", "कितना": "kitna", "कितने": "kitne",
+    "कितनी": "kitni", "बाकी": "baaki", "का": "ka", "की": "ki",
+    "के": "ke", "को": "ko", "खाता": "khata", "खाते": "khaate",
+    "में": "mein", "है": "hai", "हैं": "hain", "रुपये": "rupaye",
+    "रुपया": "rupiya", "रुपए": "rupaye", "नया": "naya", "नई": "nayi",
+    "कस्टमर": "customer", "ग्राहक": "grahak", "जोड़ो": "jodo", "जोड़": "jod",
+    "जोडो": "jodo", "ऐड": "add", "बनाओ": "banao", "लिखो": "likho",
+    "लिख": "likh", "परसों": "parso", "परसो": "parso", "लोन": "loan",
+    "ब्याज": "byaaj", "हफ्ता": "hafta", "धमकी": "dhamki", "पुलिस": "police",
+    "और": "aur", "फिर": "phir", "लेकिन": "lekin", "हिसाब": "hisaab",
+    "हिशाब": "hisaab", "पैसा": "paisa", "पैसे": "paise", "कैश": "cash",
+
+    # Marathi Devanagari Keywords
+    "आहे": "ahe", "नाही": "nahi", "दिले": "dile", "दिलीस": "dilis",
+    "घेतले": "ghetle", "कोणाचे": "konache", "किती": "kiti", "काल": "kal",
+    "परवा": "parva", "आजच": "aajach", "नवीन": "naveen", "आणि": "aani",
+
+    # Kannada Script Names & Keywords
+    "ರಮೇಶ್": "ramesh", "ರಮೇಶ": "ramesh", "ಶರ್ಮಾ": "sharma", "ವರ್ಮಾ": "verma",
+    "ಸುರೇಶ್": "suresh", "ಸುರೇಶ": "suresh", "ಗೌಡ": "gowda", "ಲಕ್ಷ್ಮಿ": "lakshmi",
+    "ಲಕ್ಷ್ಮೀ": "lakshmi", "ದೇವಿ": "devi", "ಕಿರಣ್": "kiran", "ಕುಮಾರ್": "kumar",
+    "ಸಾಲ": "saala", "ಕೊಟ್ಟ": "kotta", "ಕೊಟ್ಟಿದ್ದ": "kottidda", "ಕೊಡು": "kodu",
+    "ನಿನ್ನೆ": "ninne", "ಮೊನ್ನೆ": "monne", "ಇವತ್ತು": "ivattu", "ಜಮಾ": "jama",
+    "ಹಾಕು": "haaku", "ಬೇಡ": "beda", "ಅಲ್ಲ": "alla", "ಎಷ್ಟು": "eshtu",
+    "ಹೊಸ": "hosa", "ಗ್ರಾಹಕ": "grahaka", "ಖಾತೆ": "khaate", "ಬರೆ": "bare",
+    "ರೂಪಾಯಿ": "roopayi", "ಮತ್ತು": "matthu", "ಒಟ್ಟು": "ottu",
+
+    # Tamil Script Names & Keywords
+    "ரமேஷ்": "ramesh", "சர்மா": "sharma", "வர்மா": "verma", "சுரேஷ்": "suresh",
+    "லக்ஷ்மி": "lakshmi", "தேவி": "devi", "கிரண்": "kiran", "குமார்": "kumar",
+    "கடன்": "kadan", "கொடுத்தார்": "kodutha", "கொடுத்த": "kodutha", "கொடு": "kodu",
+    "நேற்று": "netru", "நேத்து": "nethu", "இன்று": "innikku", "இன்னைக்கு": "innikku",
+    "ஜமா": "jama", "இல்லை": "illa", "வேண்டாம்": "vendam", "எவ்வளவு": "evlo",
+    "புதிய": "pudhiya", "கணக்கு": "kanakku", "ரூபாய்": "roobai", "மற்றும்": "mattrum",
+
+    # Telugu Script Names & Keywords
+    "రమేష్": "ramesh", "శర్మ": "sharma", "వర్మ": "verma", "సురేష్": "suresh",
+    "లక్ష్మి": "lakshmi", "దేవి": "devi", "కిరణ్": "kiran", "కుమార్": "kumar",
+    "అప్పు": "appu", "ఇచ్చాడు": "ichadu", "ఇచ్చాను": "ichanu", "నిన్న": "ninna",
+    "మొన్న": "monna", "ఈరోజు": "eroju", "జమా": "jama", "వద్దు": "vaddu",
+    "కాదు": "kaadu", "ఎంత": "entha", "కొత్త": "kottha", "ఖాతా": "khata",
+    "రూపాయలు": "roopayalu", "మరియు": "mariyu",
+}
+
+_INDIC_CHAR_MAP: dict[str, str] = {
+    # Devanagari Vowels & Matras
+    'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee', 'उ': 'u', 'ऊ': 'oo', 'ऋ': 'ri',
+    'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au', 'अं': 'an', 'अः': 'ah',
+    'ा': 'a', 'ि': 'i', 'ी': 'ee', 'ु': 'u', 'ू': 'oo', 'ृ': 'ri',
+    'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au', 'ं': 'n', 'ँ': 'n', 'ः': 'h',
+    '्': '',
+    # Devanagari Consonants
+    'क': 'k', 'ख': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'ng',
+    'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'ny',
+    'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n',
+    'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
+    'प': 'p', 'फ': 'ph', 'ब': 'b', 'भ': 'bh', 'म': 'm',
+    'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh', 'ष': 'sh', 'स': 's', 'ह': 'h',
+    'क़': 'q', 'ख़': 'kh', 'ग़': 'g', 'ज़': 'z', 'ड़': 'r', 'ढ़': 'rh', 'फ़': 'f',
+
+    # Kannada
+    'ಅ': 'a', 'ಆ': 'aa', 'ಇ': 'i', 'ಈ': 'ee', 'ಉ': 'u', 'ಊ': 'oo', 'ಋ': 'ri',
+    'ಎ': 'e', 'ಏ': 'e', 'ಐ': 'ai', 'ಒ': 'o', 'ಓ': 'o', 'ಔ': 'au', 'ಂ': 'm', 'ಃ': 'h',
+    'ಾ': 'a', 'ಿ': 'i', 'ೀ': 'ee', 'ು': 'u', 'ೂ': 'oo', 'ೃ': 'ri',
+    'ೆ': 'e', 'ೇ': 'e', 'ೈ': 'ai', 'ೊ': 'o', 'ೋ': 'o', 'ೌ': 'au', '್': '',
+    'ಕ': 'k', 'ಖ': 'kh', 'ಗ': 'g', 'ಘ': 'gh', 'ಙ': 'ng',
+    'ಚ': 'ch', 'ಛ': 'chh', 'ಜ': 'j', 'ಝ': 'jh', 'ಞ': 'ny',
+    'ಟ': 't', 'ಠ': 'th', 'ಡ': 'd', 'ಢ': 'dh', 'ಣ': 'n',
+    'ತ': 't', 'ಥ': 'th', 'ದ': 'd', 'ಧ': 'dh', 'ನ': 'n',
+    'ಪ': 'p', 'ಫ': 'ph', 'ಬ': 'b', 'ಭ': 'bh', 'ಮ': 'm',
+    'ಯ': 'y', 'ರ': 'r', 'ಲ': 'l', 'ವ': 'v', 'ಶ': 'sh', 'ಷ': 'sh', 'ಸ': 's', 'ಹ': 'h', 'ಳ': 'l',
+
+    # Tamil
+    'அ': 'a', 'ஆ': 'aa', 'இ': 'i', 'ஈ': 'ee', 'உ': 'u', 'ஊ': 'oo',
+    'எ': 'e', 'ஏ': 'e', 'ஐ': 'ai', 'ஒ': 'o', 'ஓ': 'o', 'ஔ': 'au', 'ஃ': 'h',
+    'ா': 'a', 'ி': 'i', 'ீ': 'ee', 'ு': 'u', 'ூ': 'oo',
+    'ெ': 'e', 'ே': 'e', 'ை': 'ai', 'ொ': 'o', 'ோ': 'o', 'ௌ': 'au', '்': '',
+    'க': 'k', 'ங': 'ng', 'ச': 's', 'ஞ': 'ny', 'ட': 't', 'ண': 'n',
+    'த': 't', 'ந': 'n', 'ப': 'p', 'ம': 'm', 'ய': 'y', 'ர': 'r',
+    'ல': 'l', 'வ': 'v', 'ழ': 'zh', 'ள': 'l', 'ற': 'r', 'ன': 'n',
+    'ஜ': 'j', 'ஷ': 'sh', 'ஸ': 's', 'ஹ': 'h',
+
+    # Telugu
+    'అ': 'a', 'ఆ': 'aa', 'ఇ': 'i', 'ఈ': 'ee', 'ఉ': 'u', 'ఊ': 'oo', 'ఋ': 'ri',
+    'ఎ': 'e', 'ఏ': 'e', 'ఐ': 'ai', 'ఒ': 'o', 'ఓ': 'o', 'ఔ': 'au', 'ం': 'm', 'ః': 'h',
+    'ా': 'a', 'ి': 'i', 'ీ': 'ee', 'ు': 'u', 'ూ': 'oo', 'ృ': 'ri',
+    'ె': 'e', 'ే': 'e', 'ై': 'ai', 'ొ': 'o', 'ో': 'o', 'ౌ': 'au', '్': '',
+    'క': 'k', 'ఖ': 'kh', 'గ': 'g', 'ఘ': 'gh', 'ఙ': 'ng',
+    'చ': 'ch', 'ఛ': 'chh', 'జ': 'j', 'ఝ': 'jh', 'ఞ': 'ny',
+    'ట': 't', 'ఠ': 'th', 'డ': 'd', 'ఢ': 'dh', 'ణ': 'n',
+    'త': 't', 'థ': 'th', 'ద': 'd', 'ధ': 'dh', 'న': 'n',
+    'ప': 'p', 'ఫ': 'ph', 'బ': 'b', 'భ': 'bh', 'మ': 'm',
+    'య': 'y', 'ರ': 'r', 'ಲ': 'l', 'వ': 'v', 'శ': 'sh', 'ష': 'sh', 'స': 's', 'హ': 'h', 'ళ': 'l',
+}
+
+
+def transliterate_to_latin(text: str) -> str:
+    """
+    Fast, zero-dependency Indic-to-Latin transliteration covering
+    Devanagari (Hindi/Marathi), Kannada, Tamil, and Telugu.
+    Maps customer names and retail keywords to standard Romanized ASCII
+    while stripping Indic punctuation like '।' and '॥'.
+    """
+    if not text:
+        return ""
+
+    # 1. Strip Hindi / Indic punctuation
+    t = text.replace("\u0964", " ").replace("\u0965", " ")
+
+    # 2. Phrase-level replacements
+    for phrase, rep in _INDIC_PHRASE_MAP:
+        t = t.replace(phrase, rep)
+
+    # 3. Word-level and character-level transliteration
+    def _trans_word(w: str) -> str:
+        w_clean = w.strip()
+        if not w_clean:
+            return w
+
+        # Direct dictionary match
+        if w_clean in _INDIC_WORD_MAP:
+            return _INDIC_WORD_MAP[w_clean]
+
+        # Check if contains any Indic characters
+        has_indic = any(
+            0x0900 <= ord(c) <= 0x097F or
+            0x0C80 <= ord(c) <= 0x0CFF or
+            0x0B80 <= ord(c) <= 0x0BFF or
+            0x0C00 <= ord(c) <= 0x0C7F
+            for c in w_clean
+        )
+        if not has_indic:
+            return w
+
+        # Character-level fallback transliteration
+        out_chars = []
+        for ch in w_clean:
+            out_chars.append(_INDIC_CHAR_MAP.get(ch, ch))
+        return "".join(out_chars)
+
+    tokens = re.split(r"(\s+)", t)
+    trans_tokens = [_trans_word(tok) if not tok.isspace() else tok for tok in tokens]
+    result = "".join(trans_tokens).strip()
+    return re.sub(r"\s+", " ", result)

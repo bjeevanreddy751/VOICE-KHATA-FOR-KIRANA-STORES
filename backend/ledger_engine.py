@@ -26,6 +26,7 @@ from backend.numeral_parser import (
     number_to_spoken_hindi,
     number_to_spoken_words,
     resolve_relative_date,
+    transliterate_to_latin,
 )
 
 # ---------------------------------------------------------------------------
@@ -185,11 +186,16 @@ def process_utterance(
     """
     t0 = time.perf_counter()
     raw_clean = (raw_text or "").strip()
-    norm_text = normalize_spoken_numbers(raw_clean)
-    norm_low = norm_text.lower()
 
-    # Resolve active language (respecting manual session lock or auto-detection)
+    # Resolve active language on ORIGINAL raw_clean (before transliterating)
     active_lang = session.preferred_language if getattr(session, "preferred_language", "auto") != "auto" else detect_language(raw_clean, stt_lang)
+
+    # Transliterate native Indic script to Romanized Latin
+    trans_text = transliterate_to_latin(raw_clean)
+
+    # Normalize spoken numbers, fractions & digits
+    norm_text = normalize_spoken_numbers(trans_text)
+    norm_low = norm_text.lower()
 
     # -----------------------------------------------------------------------
     # Step 0 — Responsible AI Money & Safety Guardrail Check
@@ -229,7 +235,7 @@ def process_utterance(
     # -----------------------------------------------------------------------
     add_cust_match = re.search(
         r"\b(?:naya\s+(?:customer|grahak)(?:\s+jodo)?|add\s+(?:new\s+)?(?:customer|member)|create\s+(?:customer|member)|naya\s+khata\s+kholo|hosa\s+(?:customer|grahaka?)(?:\s+jodu)?|pudhiya\s+(?:customer|vaadikkaiyaalar)|kottha\s+customer|naveen\s+grahak)\s+(.+)",
-        raw_clean,
+        norm_text,
         re.IGNORECASE,
     )
     if add_cust_match:
@@ -564,8 +570,40 @@ def process_utterance(
     # -----------------------------------------------------------------------
     # Step 5 — Multi-Entry Credit/Payment Parser
     # -----------------------------------------------------------------------
-    # Split single-breath multi-entry clauses on commas, aur, and, phir, etc.
-    clauses = re.split(r"[,;]|\baur\b|\band\b|\bphir\b|\blekin\b|\bmatthu\b|\bmattrum\b|\bmariyu\b|\baani\b", norm_text, flags=re.IGNORECASE)
+    # Pre-process comma-less multi-entry boundaries (e.g., "340 udhaar kal 200 diya")
+    text_to_split = norm_text
+    text_to_split = re.sub(
+        r'(\d+|\b(?:udhaar|udhaari|saala|kadan|appu|jama|diya|diye|paid|received|kotta|kodutha|ichadu)\b)\s+(\b(?:kal|parso|parson|aaj|today|yesterday|ninne|monne|ivattu|netru|nethu|innikku|ninna|monna|eroju)\b)',
+        r'\1, \2',
+        text_to_split,
+        flags=re.IGNORECASE,
+    )
+    text_to_split = re.sub(
+        r'(\b(?:udhaar|udhaari|saala|kadan|appu|jama|diya|diye|paid|received|kotta|kodutha|ichadu)\b)\s+(\d+)',
+        r'\1, \2',
+        text_to_split,
+        flags=re.IGNORECASE,
+    )
+
+    initial_clauses = re.split(r"[,;]|\baur\b|\band\b|\bphir\b|\blekin\b|\bmatthu\b|\bmattrum\b|\bmariyu\b|\baani\b", text_to_split, flags=re.IGNORECASE)
+    clauses = []
+    for cl in initial_clauses:
+        cl_clean = cl.strip()
+        if not cl_clean:
+            continue
+        c_nums = re.findall(r"\b\d+\b", cl_clean)
+        if len(c_nums) >= 2:
+            # Sub-split right before date/payment/credit boundary words
+            sub_parts = re.split(
+                r'(?=\b(?:kal|parso|parson|aaj|today|yesterday|ninne|monne|ivattu|netru|nethu|innikku|ninna|monna|eroju)\b)',
+                cl_clean,
+                flags=re.IGNORECASE,
+            )
+            sub_parts = [p.strip() for p in sub_parts if p.strip()]
+            if len(sub_parts) > 1 and any(re.search(r"\b\d+\b", p) for p in sub_parts):
+                clauses.extend(sub_parts)
+                continue
+        clauses.append(cl_clean)
 
     entries: list[dict[str, Any]] = []
     for cl in clauses:
