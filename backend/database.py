@@ -9,6 +9,7 @@ and DPDP compliance guards.
 from __future__ import annotations
 
 import datetime
+import os
 import re
 from contextlib import contextmanager
 from pathlib import Path
@@ -61,11 +62,16 @@ def get_fernet() -> Fernet:
 
     if key_str:
         key_bytes = key_str.encode("utf-8")
-    elif _KEY_FILE.exists():
-        key_bytes = _KEY_FILE.read_bytes().strip()
     else:
-        key_bytes = Fernet.generate_key()
-        _KEY_FILE.write_bytes(key_bytes)
+        key_file = Path("/tmp/.fernet.key") if (os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME")) else _KEY_FILE
+        if key_file.exists():
+            key_bytes = key_file.read_bytes().strip()
+        else:
+            key_bytes = Fernet.generate_key()
+            try:
+                key_file.write_bytes(key_bytes)
+            except OSError:
+                pass
 
     _fernet_instance = Fernet(key_bytes)
     return _fernet_instance
@@ -91,7 +97,15 @@ def decrypt_text(token: str) -> str:
 # SQLite Connection Helper (ACID + WAL Mode)
 # ---------------------------------------------------------------------------
 def resolve_db_path(db_path: str | Path | None = None) -> Path:
-    """Resolve database path relative to project root if not absolute."""
+    """Resolve database path relative to project root if not absolute, using /tmp on Vercel."""
+    if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        tmp_base = Path("/tmp")
+        if db_path is not None:
+            p = Path(db_path)
+            return p if p.is_absolute() else tmp_base / p.name
+        configured = Path(_get_db_path_setting())
+        return configured if configured.is_absolute() else tmp_base / configured.name
+
     if db_path is not None:
         p = Path(db_path)
         return p if p.is_absolute() else _PROJECT_ROOT / p

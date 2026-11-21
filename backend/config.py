@@ -38,7 +38,7 @@ class GnaniSettings(BaseSettings):
         json_schema_extra={"env": "GNANI_DEV_MODE"},
     )
     gnani_api_key: str = Field(
-        ...,
+        default="",
         description="Gnani X-API-Key-ID for both TTS and STT services.",
         json_schema_extra={"env": "GNANI_API_KEY"},
     )
@@ -99,12 +99,7 @@ class GnaniSettings(BaseSettings):
     @field_validator("gnani_api_key")
     @classmethod
     def _key_not_placeholder(cls, v: str) -> str:
-        if v.startswith("PASTE_") or v == "":
-            raise ValueError(
-                "gnani_api_key still has the placeholder value – "
-                "paste your real key into .env"
-            )
-        return v
+        return (v or "").strip()
 
 
 @lru_cache(maxsize=1)

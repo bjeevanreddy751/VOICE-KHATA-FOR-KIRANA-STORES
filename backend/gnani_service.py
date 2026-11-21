@@ -67,10 +67,14 @@ def is_dev_mode() -> bool:
 
 def _get_cache_file(model: str, voice: str, language: str, text: str) -> Path:
     """Generate deterministic sha256 cache file path."""
-    _TTS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    cache_dir = Path("/tmp/.tts_cache") if (os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME")) else _TTS_CACHE_DIR
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
     raw = f"{model}:{voice}:{language}:{text.strip()}"
     h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
-    return _TTS_CACHE_DIR / f"{h}.wav"
+    return cache_dir / f"{h}.wav"
 
 
 def is_gnani_configured() -> bool:
