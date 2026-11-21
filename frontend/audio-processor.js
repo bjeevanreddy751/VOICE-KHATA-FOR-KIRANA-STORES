@@ -12,6 +12,7 @@ class PCMAudioProcessor extends AudioWorkletProcessor {
     this.targetSampleRate = 16000;
     this.buffer = new Int16Array(512); // 512 samples = 1,024 bytes
     this.bufferIndex = 0;
+    this.phase = 0;
   }
 
   process(inputs, outputs, parameters) {
@@ -21,10 +22,11 @@ class PCMAudioProcessor extends AudioWorkletProcessor {
     }
 
     const inputChannel = input[0]; // Float32Array at context.sampleRate
-    const inputSampleRate = currentFrame ? sampleRate : 48000;
+    const inputSampleRate = typeof sampleRate !== 'undefined' ? sampleRate : 48000;
     const ratio = inputSampleRate / this.targetSampleRate;
 
-    for (let i = 0; i < inputChannel.length; i += ratio) {
+    let i = this.phase;
+    for (; i < inputChannel.length; i += ratio) {
       const idx = Math.floor(i);
       let sample = inputChannel[idx];
 
@@ -42,6 +44,7 @@ class PCMAudioProcessor extends AudioWorkletProcessor {
         this.bufferIndex = 0;
       }
     }
+    this.phase = i - inputChannel.length;
 
     return true;
   }

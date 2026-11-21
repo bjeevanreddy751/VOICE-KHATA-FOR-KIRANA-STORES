@@ -1318,7 +1318,10 @@
               }
             };
             source.connect(scriptProcessorNode);
-            scriptProcessorNode.connect(audioCtx.destination);
+            const muteGain = audioCtx.createGain();
+            muteGain.gain.value = 0;
+            scriptProcessorNode.connect(muteGain);
+            muteGain.connect(audioCtx.destination);
           }
 
         } catch (err) {

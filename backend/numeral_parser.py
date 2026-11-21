@@ -377,7 +377,7 @@ def detect_language(text: str, stt_lang: str | None = None) -> str:
     # Devanagari script: distinguish Marathi vs Hindi
     if any(0x0900 <= ord(ch) <= 0x097F for ch in t):
         low_t = t.lower()
-        marathi_devanagari_markers = ("आहे", "नाही", "रुपये", "उधारी", "दिले", "घेतले", "कोणाचे", "किती", "जमा", "काल", "परवा", "आजच")
+        marathi_devanagari_markers = ("आहे", "नाही", "उधारी", "दिले", "घेतले", "कोणाचे", "किती", "काल", "परवा", "आजच")
         if any(m in low_t for m in marathi_devanagari_markers):
             return "mr-IN"
         return "hi-IN"
@@ -863,7 +863,7 @@ _INDIC_CHAR_MAP: dict[str, str] = {
     'ట': 't', 'ఠ': 'th', 'డ': 'd', 'ఢ': 'dh', 'ణ': 'n',
     'త': 't', 'థ': 'th', 'ద': 'd', 'ధ': 'dh', 'న': 'n',
     'ప': 'p', 'ఫ': 'ph', 'బ': 'b', 'భ': 'bh', 'మ': 'm',
-    'య': 'y', 'ರ': 'r', 'ಲ': 'l', 'వ': 'v', 'శ': 'sh', 'ష': 'sh', 'స': 's', 'హ': 'h', 'ళ': 'l',
+    'య': 'y', 'ర': 'r', 'ల': 'l', 'వ': 'v', 'శ': 'sh', 'ష': 'sh', 'స': 's', 'హ': 'h', 'ళ': 'l',
 }
 
 
