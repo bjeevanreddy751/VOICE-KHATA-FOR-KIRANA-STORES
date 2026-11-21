@@ -126,6 +126,15 @@ async def get_audio_processor():
     raise HTTPException(status_code=404, detail="audio-processor.js not found")
 
 
+@app.get("/favicon.ico")
+async def get_favicon():
+    """Serve favicon.ico to prevent 404 in browser console."""
+    p = _FRONTEND_DIR / "favicon.ico"
+    if p.exists():
+        return FileResponse(str(p), media_type="image/x-icon")
+    raise HTTPException(status_code=404, detail="favicon.ico not found")
+
+
 # ---------------------------------------------------------------------------
 # Root Endpoint
 # ---------------------------------------------------------------------------

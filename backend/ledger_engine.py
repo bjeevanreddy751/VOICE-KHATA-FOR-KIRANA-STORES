@@ -128,6 +128,7 @@ _INVALID_NAME_WORDS = {
     "search", "karo", "batao", "hai", "tha", "the", "bhi", "aur", "and",
     "naya", "new", "customer", "member", "grahak", "store", "dukan", "shop",
     "khata", "khaata", "entry", "please", "yes", "no", "nahi", "nahin", "sir",
+    "unknown", "none", "null", "n/a", "na", "anonymous",
 }
 
 
@@ -970,9 +971,9 @@ def process_utterance(
     matches = database.find_customers_by_name(candidate_name, db_path=db_path) if candidate_name else []
 
     # If deterministic lookup didn't match, check optional Gemini fallback
-    if (not matches or not entries):
+    if ((not matches and not (candidate_name and _is_valid_customer_name(candidate_name))) or not entries):
         fb = _extract_with_gemini_fallback(raw_clean)
-        if fb and fb.get("customer_name") and fb.get("amount"):
+        if fb and fb.get("customer_name") and _is_valid_customer_name(fb.get("customer_name", "")) and fb.get("amount"):
             candidate_name = fb["customer_name"]
             matches = database.find_customers_by_name(candidate_name, db_path=db_path)
             day_offset, date_str, rel_label = resolve_relative_date(fb.get("relative_day", "today"))

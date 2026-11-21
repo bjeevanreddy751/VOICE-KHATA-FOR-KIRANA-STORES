@@ -6,9 +6,28 @@
   <title>VaaniKhata · Voice Khata for Kirana Stores</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#C83E2B">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <meta name="description" content="Multilingual AI Voice Ledger for Kirana Stores powered by Gnani Prisma v3.0 and Timbre v3.0">
+
+  <!-- Suppress Tailwind Play CDN production warning in console -->
+  <script>
+    (function() {
+      const origWarn = console.warn;
+      console.warn = function(...args) {
+        const isTailwindNotice = args.some(function(arg) {
+          return typeof arg === 'string' && (arg.includes('cdn.tailwindcss.com') || arg.includes('Tailwind CSS in production'));
+        });
+        if (isTailwindNotice) {
+          return;
+        }
+        origWarn.apply(console, args);
+      };
+    })();
+  </script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -56,7 +75,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://db.onlinewebfonts.com/c/8cb707a9b8a73f8a7403336b861c3074?family=BubbledotICG-FinePos" rel="stylesheet">
 
   <style>
     /* Base Light Mode (Pitch Deck Aesthetic) */
@@ -174,7 +192,7 @@
     :root,
     [data-theme="daylight"] {
       --vk-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-      --vk-font-dot: "BubbledotICG-FinePos", ui-monospace, SFMono-Regular, monospace;
+      --vk-font-dot: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       --vk-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
       /* Daylight Prism Palette */
@@ -1353,7 +1371,7 @@
         <div class="relative my-2">
           <button id="btn-mic" class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-terracotta text-white flex flex-col items-center justify-center shadow-lg transition transform active:scale-95 select-none focus:outline-none">
             <svg class="w-10 h-10 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 02-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 0 1-3-3V5a3 3 0 116 0v6a3 3 0 0 1-3 3z"></path>
             </svg>
             <span class="text-[10px] font-extrabold uppercase tracking-widest">HOLD</span>
           </button>
@@ -1402,7 +1420,6 @@
       <div class="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h2 class="text-lg font-bold font-serif text-charcoal">Customer Khata Ledger</h2>
-          <p class="text-xs text-charcoal-muted">Real-time ACID encrypted balances with audit transparency</p>
         </div>
         <div class="flex items-center space-x-2">
           <button id="btn-open-add-member" class="px-3.5 py-1.5 bg-terracotta hover:bg-terracotta-hover text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1">
@@ -2091,6 +2108,16 @@
         }, 3200);
       }
 
+      function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
       // ── Theme Management (Light / Dark Mode) ───────────────────
       function applyTheme(theme) {
         if (theme === 'dark') {
@@ -2347,6 +2374,7 @@
       // ── WebSocket Connection ───────────────────────────────────
       function connectWebSocket() {
         ws = new WebSocket(wsUrl);
+        ws.binaryType = 'arraybuffer';
 
         ws.onopen = () => {
           console.log("Connected to VaaniKhata /ws/voice");
@@ -2354,12 +2382,40 @@
           handleOnline();
         };
 
-        ws.onmessage = (event) => {
+        ws.onmessage = async (event) => {
+          let rawText = '';
+          if (typeof event.data === 'string') {
+            rawText = event.data;
+          } else if (event.data instanceof ArrayBuffer) {
+            rawText = new TextDecoder().decode(event.data);
+          } else if (typeof Blob !== 'undefined' && event.data instanceof Blob) {
+            try {
+              rawText = await event.data.text();
+            } catch (blobErr) {
+              console.warn("Failed to read WebSocket Blob message:", blobErr);
+              return;
+            }
+          } else {
+            try {
+              rawText = new TextDecoder().decode(event.data);
+            } catch (_) {
+              console.warn("Unsupported binary WebSocket frame received:", event.data);
+              return;
+            }
+          }
+
+          let data;
           try {
-            const data = JSON.parse(event.data);
+            data = JSON.parse(rawText);
+          } catch (parseErr) {
+            console.warn("Non-JSON frame received:", rawText);
+            return;
+          }
+
+          try {
             handleWebSocketMessage(data);
-          } catch (e) {
-            console.error("Non-JSON frame:", event.data);
+          } catch (handlerErr) {
+            console.error("Error processing WebSocket message:", handlerErr, data);
           }
         };
 
