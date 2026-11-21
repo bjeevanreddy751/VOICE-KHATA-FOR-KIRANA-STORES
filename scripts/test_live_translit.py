@@ -1,9 +1,9 @@
 import os
-from backend.database import init_db
+from backend.database import reset_demo_db
 from backend.ledger_engine import process_utterance, SessionState
 
-# Reset db
-init_db()
+# Reset db to clean demo state
+reset_demo_db()
 
 session = SessionState()
 
