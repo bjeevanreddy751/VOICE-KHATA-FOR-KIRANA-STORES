@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VaaniKhata · Voice Khata for Kirana Stores</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#C83E2B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="description" content="Multilingual AI Voice Ledger for Kirana Stores powered by Gnani Prisma v3.0 and Timbre v3.0">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#FAF6F0',
+            terracotta: {
+              DEFAULT: '#C83E2B',
+              hover: '#B33322',
+              light: '#FDF1EF',
+              border: '#F6C9C3',
+            },
+            charcoal: {
+              DEFAULT: '#1A1A1A',
+              muted: '#5A5550',
+              border: '#E8E2D9',
+            },
+            sage: {
+              DEFAULT: '#2E6F40',
+              light: '#EAF4EC',
+              border: '#BFE0C7',
+            },
+            sand: {
+              DEFAULT: '#F3EDE4',
+              card: '#FFFFFF',
+            }
+          },
+          fontFamily: {
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- QRCode.js CDN for Scannable UPI Settlement QR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* Base Light Mode (Pitch Deck Aesthetic) */
+    body {
+      background-color: #FAF6F0;
+      color: #1A1A1A;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* Pulsing Mic Ring */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(200, 62, 43, 0.7); }
+      70% { transform: scale(1.08); box-shadow: 0 0 0 24px rgba(200, 62, 43, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(200, 62, 43, 0); }
+    }
+
+    .mic-active {
+      animation: pulse-ring 1.4s infinite cubic-bezier(0.24, 0, 0.38, 1);
+      background-color: #B33322 !important;
+    }
+
+    /* Subtle custom scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #D6CEC3; border-radius: 9999px; }
+
+    /* ============================================================ */
+    /* DARK MODE STYLES (Obsidian #0D1017, Slate #161B26, Ivory)   */
+    /* ============================================================ */
+    .dark {
+      color-scheme: dark;
+    }
+    .dark body {
+      background-color: #0D1017 !important;
+      color: #F3F4F6 !important;
+    }
+    .dark header {
+      background-color: #161B26 !important;
+      border-color: #262D3D !important;
+    }
+    .dark .bg-white {
+      background-color: #161B26 !important;
+    }
+    .dark .bg-canvas {
+      background-color: #0D1017 !important;
+    }
+    .dark .bg-sand {
+      background-color: #1F2737 !important;
+    }
+    .dark .border-charcoal-border,
+    .dark .border-charcoal-border\/70,
+    .dark .border-charcoal-border\/50 {
+      border-color: #262D3D !important;
+    }
+    .dark .text-charcoal {
+      color: #F3F4F6 !important;
+    }
+    .dark .text-charcoal-muted {
+      color: #9CA3AF !important;
+    }
+    .dark .chip-btn {
+      background-color: #161B26;
+      border-color: #262D3D;
+    }
+    .dark .chip-btn:hover {
+      background-color: #1F2737;
+      border-color: #E25542;
+    }
+    .dark .bg-terracotta-light,
+    .dark .bg-terracotta-light\/60,
+    .dark .bg-terracotta-light\/40 {
+      background-color: rgba(226, 85, 66, 0.15) !important;
+    }
+    .dark .bg-sage-light,
+    .dark .bg-sage-light\/60 {
+      background-color: rgba(52, 211, 153, 0.15) !important;
+    }
+    .dark .border-terracotta-border,
+    .dark .border-terracotta-border\/50 {
+      border-color: rgba(226, 85, 66, 0.4) !important;
+    }
+    .dark .border-sage-border,
+    .dark .border-sage-border\/50 {
+      border-color: rgba(52, 211, 153, 0.4) !important;
+    }
+    .dark .text-terracotta {
+      color: #E25542 !important;
+    }
+    .dark .text-sage {
+      color: #34D399 !important;
+    }
+    .dark .text-amber-800 {
+      color: #FCD34D !important;
+    }
+    .dark .bg-amber-100 {
+      background-color: rgba(245, 158, 11, 0.2) !important;
+    }
+    .dark .border-amber-300 {
+      border-color: rgba(245, 158, 11, 0.4) !important;
+    }
+    .dark input, .dark select {
+      background-color: #1F2737 !important;
+      color: #F3F4F6 !important;
+      border-color: #262D3D !important;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #262D3D;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+  <!-- ============================================================ -->
+  <!--  AUTOPLAY UNLOCK BANNER                                      -->
+  <!-- ============================================================ -->
+  <div id="audio-unlock-banner" class="bg-amber-100 text-amber-900 border-b border-amber-300 px-4 py-2 text-xs sm:text-sm font-medium flex items-center justify-between shadow-xs sticky top-0 z-50">
+    <div class="flex items-center space-x-2">
+      <span class="text-base">🔊</span>
+      <span>Click <strong>"Enable Audio"</strong> or click any preset chip to activate live voice playback.</span>
+    </div>
+    <button id="btn-unlock-audio" class="ml-3 px-3.5 py-1 bg-amber-600 text-white rounded-full font-bold text-xs uppercase tracking-wide hover:bg-amber-700 transition shadow-xs">
+      Enable Audio
+    </button>
+  </div>
+
+  <!-- ============================================================ -->
+  <!--  HEADER & COMPLIANCE BAR                                     -->
+  <!-- ============================================================ -->
+  <header class="bg-white border-b border-charcoal-border sticky top-0 z-40 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+      
+      <!-- Brand & Track Tag -->
+      <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+        <div class="flex items-center space-x-2">
+          <div class="w-9 h-9 rounded-xl bg-terracotta text-white flex items-center justify-center font-bold text-lg shadow-sm">
+            VK
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h1 class="text-xl font-bold font-serif tracking-tight text-charcoal">VaaniKhata<span class="text-terracotta">.</span></h1>
+              <span class="text-[11px] font-bold uppercase tracking-wider bg-terracotta-light text-terracotta px-2 py-0.5 rounded-full border border-terracotta-border">
+                Track PS2
+              </span>
+            </div>
+            <p class="text-[11px] text-charcoal-muted">Gnani Prisma v3.0 STT & Timbre v3.0 TTS</p>
+          </div>
+        </div>
+
+        <!-- Mobile Connection Pill -->
+        <div id="ws-pill-mobile" class="sm:hidden flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Gnani Live</span>
+        </div>
+      </div>
+
+      <!-- Controls & Status Bar -->
+      <div class="flex items-center space-x-2 sm:space-x-2.5 w-full sm:w-auto justify-between sm:justify-end flex-wrap gap-y-2">
+        
+        <!-- Live WebSocket Pill (Desktop) -->
+        <div id="ws-pill" class="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Prisma + Timbre Live</span>
+        </div>
+
+        <!-- Latency Pill -->
+        <div id="latency-pill" class="flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-sand text-charcoal border border-charcoal-border">
+          <span class="text-terracotta">⚡</span>
+          <span id="latency-val">4.3 ms</span>
+        </div>
+
+        <!-- 75 dB Shop Noise Simulator Toggle -->
+        <button id="btn-shop-noise" title="Web Audio 75 dB Shop/Street Ambient Noise Simulator for testing VAD & Barge-In" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-sand text-charcoal hover:bg-charcoal hover:text-white border border-charcoal-border transition">
+          <span>📢</span>
+          <span class="hidden md:inline">75 dB Noise</span>
+        </button>
+
+        <!-- Turn-1 Disclosure Replay -->
+        <button id="btn-replay-disclosure" title="Replay Mandatory Turn-1 AI Disclosure" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white text-charcoal hover:bg-sand border border-charcoal-border transition">
+          <span>🔊</span>
+          <span class="hidden md:inline">AI Disclosure</span>
+        </button>
+
+        <!-- Test Voice Output -->
+        <button id="btn-test-voice" title="Test Voice Output (Plays Turn 1 Spoken Words)" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-sage-light text-sage hover:bg-sage hover:text-white border border-sage-border transition">
+          <span>🔊</span>
+          <span>Test Voice</span>
+        </button>
+
+        <!-- DPDP 1-Click Purge -->
+        <button id="btn-purge-dpdp" title="DPDP Act: 1-Click Wipe All Voice Logs" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-terracotta hover:bg-red-100 border border-red-200 transition">
+          <span>🗑️</span>
+          <span>DPDP Purge</span>
+          <span id="purge-badge" class="ml-1 px-1.5 py-0.2 bg-terracotta text-white rounded-full text-[10px] font-bold">0</span>
+        </button>
+
+        <!-- Reset Demo -->
+        <button id="btn-reset-demo" title="Reset balances to pitch deck starting math" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-sand text-charcoal hover:bg-charcoal hover:text-white border border-charcoal-border transition">
+          <span>↺</span>
+          <span class="hidden md:inline">Reset</span>
+        </button>
+
+        <!-- Light / Dark Mode Toggle -->
+        <button id="btn-theme-toggle" title="Toggle Light / Dark Mode (Obsidian & Slate)" class="w-8 h-8 rounded-lg bg-sand text-charcoal flex items-center justify-center text-sm border border-charcoal-border hover:border-terracotta transition">
+          <span id="theme-icon">🌙</span>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================ -->
+  <!--  6-LANGUAGE INDIC AUTO-DETECT SWITCHER BAR                   -->
+  <!-- ============================================================ -->
+  <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-4 pb-0">
+    <div class="bg-white rounded-2xl p-2.5 border border-charcoal-border shadow-xs flex items-center justify-between gap-2 overflow-x-auto">
+      <div class="flex items-center space-x-1.5 text-xs font-bold text-charcoal-muted shrink-0 pl-1">
+        <span>🌐 Speech Language:</span>
+      </div>
+      <div class="flex items-center space-x-1.5 overflow-x-auto py-0.5">
+        <button data-lang="auto" class="lang-pill px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap bg-terracotta text-white shadow-xs">
+          🌐 Auto Detect
+        </button>
+        <button data-lang="hi-IN" class="lang-pill px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap bg-sand text-charcoal hover:bg-charcoal hover:text-white border border-charcoal-border">
+          हिन्दी (hi-IN)
+        </button>
+        <button data-lang="kn-IN" class="lang-pill px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap bg-sand text-charcoal hover:bg-charcoal hover:text-white border border-charcoal-border">
+          ಕನ್ನಡ (kn-IN)
+        </button>
+        <button data-lang="ta-IN" class="lang-pill px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap bg-sand text-charcoal hover:bg-charcoal hover:text-white border border-charcoal-border">
+          தமிழ் (ta-IN)
+        </button>
+        <button data-lang="te-IN" class="lang-pill px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap bg-sand text-charcoal hover:bg-charcoal hover:text-white border border-charcoal-border">
+          తెలుగు (te-IN)
+        </button>
+        <button data-lang="mr-IN" class="lang-pill px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap bg-sand text-charcoal hover:bg-charcoal hover:text-white border border-charcoal-border">
+          मराठी (mr-IN)
+        </button>
+        <button data-lang="en-IN" class="lang-pill px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap bg-sand text-charcoal hover:bg-charcoal hover:text-white border border-charcoal-border">
+          English (en-IN)
+        </button>
+      </div>
+      <div id="active-lang-badge" class="hidden sm:flex items-center space-x-1 text-[11px] font-bold text-terracotta shrink-0 pr-1">
+        <span>Active:</span>
+        <span id="active-lang-code" class="uppercase font-mono">AUTO</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!--  MAIN 2-COLUMN VIEWPORT                                      -->
+  <!-- ============================================================ -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-5 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- ── LEFT COLUMN: Voice Console, Mic & Quick-Trigger Chips ─ -->
+    <section class="lg:col-span-5 flex flex-col space-y-5">
+
+      <!-- Today's Kirana Day-Book Summary Banner -->
+      <div class="bg-white rounded-2xl p-5 border border-charcoal-border shadow-xs">
+        <div class="flex items-center justify-between pb-3 border-b border-sand">
+          <h2 class="text-xs font-bold tracking-wider uppercase text-charcoal-muted">Today's Store Summary</h2>
+          <span id="summary-date" class="text-xs font-medium text-charcoal-muted">Today</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-3">
+          <div class="bg-terracotta-light/60 p-3.5 rounded-xl border border-terracotta-border/50">
+            <span class="text-[11px] font-bold text-terracotta uppercase tracking-wider block">Today's Udhaar (Credit)</span>
+            <span id="summary-today-credit" class="text-2xl font-black text-terracotta font-serif mt-1 block">₹0</span>
+          </div>
+          <div class="bg-sage-light/60 p-3.5 rounded-xl border border-sage-border/50">
+            <span class="text-[11px] font-bold text-sage uppercase tracking-wider block">Today's Jama (Payment)</span>
+            <span id="summary-today-payment" class="text-2xl font-black text-sage font-serif mt-1 block">₹0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Voice Assistant Console Card -->
+      <div class="bg-white rounded-2xl p-6 border border-charcoal-border shadow-sm flex flex-col items-center text-center relative overflow-hidden">
+        
+        <!-- Live Waveform Header -->
+        <div class="w-full flex items-center justify-between mb-4">
+          <span id="assistant-badge" class="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-sand text-charcoal-muted border border-charcoal-border">
+            Ready
+          </span>
+          <div class="flex items-center space-x-1.5 text-xs text-charcoal-muted">
+            <span id="voice-indicator" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span id="voice-status-text">Timbre Ready</span>
+          </div>
+        </div>
+
+        <!-- Assistant Utterance Display Box -->
+        <div class="w-full bg-canvas rounded-xl p-4 min-h-[110px] flex flex-col justify-center border border-charcoal-border/70 mb-5 text-left relative">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-charcoal-muted flex items-center justify-between mb-1">
+            <span>Assistant Reply</span>
+            <button id="btn-replay-last" title="Replay Spoken Reply" class="text-terracotta hover:underline font-semibold text-xs flex items-center space-x-1">
+              <span>🔊 Replay</span>
+            </button>
+          </div>
+          <p id="assistant-text" class="text-sm sm:text-base font-medium text-charcoal leading-relaxed">
+            Namaste! Main VaaniKhata AI assistant hoon. Aap bolkar apne kirana store ka udhaar aur jama likh sakte hain.
+          </p>
+        </div>
+
+        <!-- Giant Push-to-Talk Button -->
+        <div class="relative my-2">
+          <button id="btn-mic" class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-terracotta text-white flex flex-col items-center justify-center shadow-lg transition transform active:scale-95 select-none focus:outline-none">
+            <svg class="w-10 h-10 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 02-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+            </svg>
+            <span class="text-[10px] font-extrabold uppercase tracking-widest">HOLD</span>
+          </button>
+        </div>
+        <p id="mic-hint" class="text-xs text-charcoal-muted font-medium mt-3">
+          Hold button or press <kbd class="px-1.5 py-0.5 bg-sand border border-charcoal-border rounded text-[11px] font-mono">Space</kbd> to speak
+        </p>
+
+        <!-- Live Partial / Recognized Speech Transcription -->
+        <div class="w-full mt-4 pt-4 border-t border-sand text-left">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-charcoal-muted block mb-1">Last Spoken Utterance</span>
+          <p id="user-transcript" class="text-xs sm:text-sm font-semibold text-charcoal italic">
+            "Ramesh ka teen sau chaalis udhaar, kal do sau diya tha"
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Quick-Trigger Preset Demo Scenario Chips (Pitch Deck Script) -->
+      <div class="bg-white rounded-2xl p-5 border border-charcoal-border shadow-xs">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-bold tracking-wider uppercase text-charcoal-muted">Judge Demo · 1-Click Quick Chips</h2>
+          <span class="text-[11px] text-terracotta font-bold">Fast Presets</span>
+        </div>
+        
+        <div class="flex flex-col space-y-2">
+          <!-- Turn 1 -->
+          <button data-text="Ramesh ka teen sau chaalis udhaar, kal do sau diya tha" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-terracotta block">Turn 1 · Multi-Entry Speech + Homonym</span>
+              <span class="text-charcoal-muted">"Ramesh ka teen sau chaalis udhaar, kal do sau diya tha"</span>
+            </div>
+            <span class="text-charcoal-muted font-mono ml-2">▶</span>
+          </button>
+
+          <!-- Turn 2 -->
+          <button data-text="Sharma" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-sage block">Turn 2 · Homonym Clarification</span>
+              <span class="text-charcoal-muted">"Sharma" (Resolves to Ramesh Sharma)</span>
+            </div>
+            <span class="text-charcoal-muted font-mono ml-2">▶</span>
+          </button>
+
+          <!-- Turn 3 -->
+          <button data-text="Nahi, 430 kar do" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-amber-700 block">Turn 3 · Atomic Voice Correction</span>
+              <span class="text-charcoal-muted">"Nahi, 430 kar do" (Reverses 340, sets 430 => ₹230)</span>
+            </div>
+            <span class="text-charcoal-muted font-mono ml-2">▶</span>
+          </button>
+
+          <!-- Turn 4A -->
+          <button data-text="Ramesh Sharma ka total?" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-charcoal block">Turn 4A · Customer Balance Query</span>
+              <span class="text-charcoal-muted">"Ramesh Sharma ka total?"</span>
+            </div>
+            <span class="text-charcoal-muted font-mono ml-2">▶</span>
+          </button>
+
+          <!-- Turn 4B -->
+          <button data-text="Aaj kitna udhaar gaya?" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-charcoal block">Turn 4B · Daily Store Summary</span>
+              <span class="text-charcoal-muted">"Aaj kitna udhaar gaya?"</span>
+            </div>
+            <span class="text-charcoal-muted font-mono ml-2">▶</span>
+          </button>
+
+          <!-- Turn 5 -->
+          <button data-text="Suresh ka 150 jama" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-sage block">Direct Payment Entry</span>
+              <span class="text-charcoal-muted">"Suresh ka 150 jama" (₹280 - 150 = ₹130)</span>
+            </div>
+            <span class="text-charcoal-muted font-mono ml-2">▶</span>
+          </button>
+
+          <!-- Regional Kannada Chip -->
+          <button data-text="Suresh ge 100 saala, ninne 50 kotta" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-indigo-600 block">Regional · Kannada Speech</span>
+              <span class="text-charcoal-muted">"Suresh ge 100 saala, ninne 50 kotta"</span>
+            </div>
+            <span class="text-charcoal-muted font-mono ml-2">▶</span>
+          </button>
+
+          <!-- Voice Add Member Chip -->
+          <button data-text="Naya grahak Manoj Gupta landmark Indiranagar khata kholo" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-teal-600 block">Voice Add Customer</span>
+              <span class="text-charcoal-muted">"Naya grahak Manoj Gupta landmark Indiranagar khata kholo"</span>
+            </div>
+            <span class="text-charcoal-muted font-mono ml-2">▶</span>
+          </button>
+
+          <!-- Turn 6 (Guardrail) -->
+          <button data-text="Ramesh ko dhamki bhejo ya loan do" class="chip-btn text-left p-2.5 rounded-xl border border-red-200 bg-red-50/50 hover:bg-red-50 transition flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-red-700 block">AI Guardrail Check · Lending / Threat</span>
+              <span class="text-red-900/70">"Ramesh ko dhamki bhejo ya loan do"</span>
+            </div>
+            <span class="text-red-600 font-mono ml-2">🛡️</span>
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ── RIGHT COLUMN: Live Customer Khata Ledger Cards ─────── -->
+    <section class="lg:col-span-7 flex flex-col space-y-4">
+      
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h2 class="text-lg font-bold font-serif text-charcoal">Customer Khata Ledger</h2>
+          <p class="text-xs text-charcoal-muted">Real-time ACID encrypted balances with audit transparency</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="btn-open-add-member" class="px-3.5 py-1.5 bg-terracotta hover:bg-terracotta-hover text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1">
+            <span>+ Add Member</span>
+          </button>
+          <span id="accounts-count-badge" class="text-xs font-semibold px-2.5 py-1 bg-white border border-charcoal-border rounded-lg text-charcoal-muted">
+            4 Seeded Accounts
+          </span>
+        </div>
+      </div>
+
+      <!-- Customer Cards Container -->
+      <div id="customer-cards-container" class="space-y-4">
+        <!-- Rendered dynamically by JavaScript -->
+        <div class="p-8 text-center text-charcoal-muted bg-white rounded-2xl border border-charcoal-border">
+          Loading customer accounts...
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ============================================================ -->
+  <!--  ADD MEMBER MODAL                                            -->
+  <!-- ============================================================ -->
+  <div id="add-member-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-charcoal-border transform transition">
+      <div class="flex items-center justify-between pb-3 border-b border-sand">
+        <div class="flex items-center space-x-2">
+          <span class="text-lg">👤</span>
+          <h3 class="text-base font-bold font-serif text-charcoal">+ Add New Kirana Customer</h3>
+        </div>
+        <button id="btn-close-add-member" class="text-charcoal-muted hover:text-charcoal font-bold text-xl">&times;</button>
+      </div>
+
+      <form id="form-add-member" class="mt-4 space-y-3.5">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-charcoal-muted mb-1">First Name *</label>
+            <input type="text" id="add-first-name" required placeholder="e.g. Ramesh" class="w-full px-3 py-2 text-xs rounded-xl border border-charcoal-border focus:outline-none focus:border-terracotta font-medium">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-charcoal-muted mb-1">Last Name</label>
+            <input type="text" id="add-last-name" placeholder="e.g. Gupta" class="w-full px-3 py-2 text-xs rounded-xl border border-charcoal-border focus:outline-none focus:border-terracotta font-medium">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-charcoal-muted mb-1">Area / Landmark *</label>
+          <input type="text" id="add-landmark" required placeholder="e.g. Koramangala 4th Block" class="w-full px-3 py-2 text-xs rounded-xl border border-charcoal-border focus:outline-none focus:border-terracotta font-medium">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-charcoal-muted mb-1">Phone Number *</label>
+          <input type="tel" id="add-phone" required value="+91-9845011199" class="w-full px-3 py-2 text-xs rounded-xl border border-charcoal-border focus:outline-none focus:border-terracotta font-mono font-medium">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-charcoal-muted mb-1">Opening Udhaar Balance (₹)</label>
+          <input type="number" id="add-opening-balance" value="0" min="0" step="10" class="w-full px-3 py-2 text-xs rounded-xl border border-charcoal-border focus:outline-none focus:border-terracotta font-bold">
+          <p class="text-[10px] text-charcoal-muted mt-1">If > ₹0, automatically logs an opening credit row in the ACID ledger.</p>
+        </div>
+
+        <div class="pt-2">
+          <label class="flex items-center space-x-2 cursor-pointer select-none">
+            <input type="checkbox" id="add-opt-in" checked class="w-4 h-4 rounded text-terracotta focus:ring-terracotta border-charcoal-border">
+            <span class="text-xs font-semibold text-charcoal">Opt-In for Polite Payment Reminders (DPDP Act)</span>
+          </label>
+        </div>
+
+        <div class="mt-6 pt-3 border-t border-sand flex justify-end space-x-2">
+          <button type="button" id="btn-cancel-add-member" class="px-4 py-2 bg-sand text-charcoal font-semibold text-xs rounded-xl hover:bg-charcoal-border transition">
+            Cancel
+          </button>
+          <button type="submit" id="btn-submit-add-member" class="px-4 py-2 bg-terracotta text-white font-bold text-xs rounded-xl hover:bg-terracotta-hover transition shadow-sm">
+            Save Customer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!--  POLITE REMINDER MODAL (WHATSAPP + SMS + SCANNABLE UPI QR)   -->
+  <!-- ============================================================ -->
+  <div id="reminder-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-charcoal-border transform transition">
+      <div class="flex items-center justify-between pb-3 border-b border-sand">
+        <h3 class="text-base font-bold font-serif text-charcoal" id="modal-title">Payment Reminder</h3>
+        <button id="btn-close-modal" class="text-charcoal-muted hover:text-charcoal font-bold text-xl">&times;</button>
+      </div>
+
+      <div class="mt-4" id="modal-body">
+        <!-- Injected via JS -->
+      </div>
+
+      <div class="mt-5 flex justify-end space-x-2">
+        <button id="btn-modal-dismiss" class="px-4 py-2 bg-sand text-charcoal font-semibold text-xs rounded-xl hover:bg-charcoal-border transition">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 hidden px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold text-white transition transform translate-y-2 bg-charcoal">
+    Toast message
+  </div>
+
+  <!-- Hidden Audio Player for Gnani Timbre TTS -->
+  <audio id="tts-audio" class="hidden"></audio>
+
+  <!-- ============================================================ -->
+  <!--  FRONTEND APPLICATION SCRIPT                                 -->
+  <!-- ============================================================ -->
+  <script>
+    (function () {
+      // ── State ──────────────────────────────────────────────────
+      let ws = null;
+      let audioCtx = null;
+      let micStream = null;
+      let audioWorkletNode = null;
+      let scriptProcessorNode = null;
+      let isRecording = false;
+      let lastTurnDisclosure = null;
+      let lastVoiceResult = null;
+      let lastDashboardState = null;
+      let currentLanguage = "auto";
+
+      const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${wsProtocol}//${location.host}/ws/voice`;
+
+      // ── Elements ───────────────────────────────────────────────
+      const btnMic = document.getElementById('btn-mic');
+      const micHint = document.getElementById('mic-hint');
+      const assistantText = document.getElementById('assistant-text');
+      const assistantBadge = document.getElementById('assistant-badge');
+      const userTranscript = document.getElementById('user-transcript');
+      const latencyVal = document.getElementById('latency-val');
+      const purgeBadge = document.getElementById('purge-badge');
+      const summaryTodayCredit = document.getElementById('summary-today-credit');
+      const summaryTodayPayment = document.getElementById('summary-today-payment');
+      const customerCardsContainer = document.getElementById('customer-cards-container');
+      const ttsAudio = document.getElementById('tts-audio');
+      const audioUnlockBanner = document.getElementById('audio-unlock-banner');
+      const btnUnlockAudio = document.getElementById('btn-unlock-audio');
+      const reminderModal = document.getElementById('reminder-modal');
+      const modalBody = document.getElementById('modal-body');
+      const btnCloseModal = document.getElementById('btn-close-modal');
+      const btnModalDismiss = document.getElementById('btn-modal-dismiss');
+      const toast = document.getElementById('toast');
+
+      // Theme toggle
+      const btnThemeToggle = document.getElementById('btn-theme-toggle');
+      const themeIcon = document.getElementById('theme-icon');
+
+      // Noise simulator
+      const btnShopNoise = document.getElementById('btn-shop-noise');
+
+      // Add Member Modal
+      const btnOpenAddMember = document.getElementById('btn-open-add-member');
+      const addMemberModal = document.getElementById('add-member-modal');
+      const btnCloseAddMember = document.getElementById('btn-close-add-member');
+      const btnCancelAddMember = document.getElementById('btn-cancel-add-member');
+      const formAddMember = document.getElementById('form-add-member');
+
+      function showToast(msg, isError = false) {
+        toast.textContent = msg;
+        toast.className = `fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold text-white transition transform ${isError ? 'bg-terracotta' : 'bg-charcoal'}`;
+        toast.classList.remove('hidden', 'translate-y-2');
+        setTimeout(() => {
+          toast.classList.add('translate-y-2', 'hidden');
+        }, 3200);
+      }
+
+      // ── Theme Management (Light / Dark Mode) ───────────────────
+      function applyTheme(theme) {
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+          themeIcon.textContent = '☀️';
+          localStorage.setItem('vk_theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          themeIcon.textContent = '🌙';
+          localStorage.setItem('vk_theme', 'light');
+        }
+      }
+
+      const initialTheme = localStorage.getItem('vk_theme') || 'light';
+      applyTheme(initialTheme);
+
+      btnThemeToggle.addEventListener('click', () => {
+        const isDark = document.documentElement.classList.contains('dark');
+        applyTheme(isDark ? 'light' : 'dark');
+        showToast(isDark ? 'Switched to Light Mode' : 'Switched to Dark Mode (Obsidian & Slate)');
+      });
+
+      // ── Shop Noise Simulator (75 dB Ambient kirana sounds) ─────
+      let noiseSourceNode = null;
+      let noiseGainNode = null;
+      let noiseBuffer = null;
+      let isNoisePlaying = false;
+
+      function createPinkNoiseBuffer(ctx) {
+        const bufferSize = ctx.sampleRate * 3; // 3 sec loop
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          b0 = 0.99886 * b0 + white * 0.0555179;
+          b1 = 0.99332 * b1 + white * 0.0750759;
+          b2 = 0.96900 * b2 + white * 0.1538520;
+          b3 = 0.86650 * b3 + white * 0.3104856;
+          b4 = 0.55000 * b4 + white * 0.5329522;
+          b5 = -0.7616 * b5 - white * 0.0168980;
+          data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.12;
+          b6 = white * 0.115926;
+        }
+        return buffer;
+      }
+
+      function toggleShopNoise() {
+        ensureAudioUnlocked();
+        if (!isNoisePlaying) {
+          if (!noiseGainNode) {
+            noiseGainNode = audioCtx.createGain();
+            noiseGainNode.gain.value = 0.22; // ~75 dB simulation level
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 950;
+            noiseGainNode.connect(filter);
+            filter.connect(audioCtx.destination);
+          }
+          if (!noiseBuffer) {
+            noiseBuffer = createPinkNoiseBuffer(audioCtx);
+          }
+          noiseSourceNode = audioCtx.createBufferSource();
+          noiseSourceNode.buffer = noiseBuffer;
+          noiseSourceNode.loop = true;
+          noiseSourceNode.connect(noiseGainNode);
+          noiseSourceNode.start(0);
+          isNoisePlaying = true;
+          btnShopNoise.className = "flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-600 text-white shadow-xs border border-amber-700 transition";
+          showToast("📢 75 dB Kirana Market Noise ON (Barge-in will preserve noise)");
+        } else {
+          if (noiseSourceNode) {
+            try { noiseSourceNode.stop(); } catch(e){}
+            noiseSourceNode = null;
+          }
+          isNoisePlaying = false;
+          btnShopNoise.className = "flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-sand text-charcoal hover:bg-charcoal hover:text-white border border-charcoal-border transition";
+          showToast("Shop Noise Simulator OFF");
+        }
+      }
+
+      btnShopNoise.addEventListener('click', toggleShopNoise);
+
+      // ── Audio Playback & Unlock ────────────────────────────────
+      let currentSourceNode = null;
+
+      function ensureAudioUnlocked() {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+
+      window.addEventListener('click', ensureAudioUnlocked);
+      window.addEventListener('keydown', ensureAudioUnlocked);
+      window.addEventListener('touchstart', ensureAudioUnlocked);
+
+      async function playAudioBase64(b64Wav) {
+        if (!b64Wav) return;
+
+        // Barge-in: stop any running TTS audio first (Noise node is left untouched!)
+        if (currentSourceNode) {
+          try { currentSourceNode.stop(); } catch (e) {}
+          currentSourceNode = null;
+        }
+        ttsAudio.pause();
+        ttsAudio.currentTime = 0;
+
+        ensureAudioUnlocked();
+
+        // 1. Web Audio API decoder (zero-lag direct buffer playback)
+        try {
+          const binaryStr = atob(b64Wav);
+          const len = binaryStr.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryStr.charCodeAt(i);
+          }
+
+          if (audioCtx) {
+            if (audioCtx.state === 'suspended') {
+              await audioCtx.resume();
+            }
+            const audioBuffer = await audioCtx.decodeAudioData(bytes.buffer.slice(0));
+            const source = audioCtx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(audioCtx.destination);
+            source.start(0);
+            currentSourceNode = source;
+            audioUnlockBanner.classList.add('hidden');
+            return;
+          }
+        } catch (webaudioErr) {
+          console.warn("WebAudio API decode error, falling back to HTMLAudioElement:", webaudioErr);
+        }
+
+        // 2. HTML5 Audio Element Fallback
+        try {
+          ttsAudio.src = `data:audio/wav;base64,${b64Wav}`;
+          await ttsAudio.play();
+          audioUnlockBanner.classList.add('hidden');
+        } catch (err) {
+          console.warn("Autoplay prevented:", err);
+          audioUnlockBanner.classList.remove('hidden');
+        }
+      }
+
+      btnUnlockAudio.addEventListener('click', async () => {
+        ensureAudioUnlocked();
+        if (lastTurnDisclosure && lastTurnDisclosure.audio_b64) {
+          playAudioBase64(lastTurnDisclosure.audio_b64);
+        } else {
+          document.getElementById('btn-test-voice').click();
+        }
+        audioUnlockBanner.classList.add('hidden');
+      });
+
+      // ── Language Switcher UI ───────────────────────────────────
+      function updateLanguagePillsUI(lang) {
+        currentLanguage = lang;
+        document.querySelectorAll('.lang-pill').forEach(btn => {
+          const btnLang = btn.getAttribute('data-lang');
+          if (btnLang === lang) {
+            btn.className = "lang-pill px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap bg-terracotta text-white shadow-xs";
+          } else {
+            btn.className = "lang-pill px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap bg-sand text-charcoal hover:bg-charcoal hover:text-white border border-charcoal-border";
+          }
+        });
+        const codeSpan = document.getElementById('active-lang-code');
+        if (codeSpan) codeSpan.textContent = lang.toUpperCase();
+      }
+
+      document.querySelectorAll('.lang-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetLang = btn.getAttribute('data-lang');
+          updateLanguagePillsUI(targetLang);
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'SET_LANGUAGE', language: targetLang }));
+          }
+          showToast(`Speech language set to: ${targetLang}`);
+        });
+      });
+
+      // ── WebSocket Connection ───────────────────────────────────
+      function connectWebSocket() {
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          console.log("Connected to VaaniKhata /ws/voice");
+          document.getElementById('ws-pill').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>Prisma + Timbre Live</span>';
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleWebSocketMessage(data);
+          } catch (e) {
+            console.error("Non-JSON frame:", event.data);
+          }
+        };
+
+        ws.onclose = () => {
+          console.warn("WebSocket closed. Reconnecting in 2s...");
+          document.getElementById('ws-pill').innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Reconnecting...</span>';
+          setTimeout(connectWebSocket, 2000);
+        };
+
+        ws.onerror = (err) => {
+          console.error("WebSocket error:", err);
+        };
+      }
+
+      function handleWebSocketMessage(data) {
+        // 0. Language Updated
+        if (data.type === 'LANGUAGE_UPDATED') {
+          assistantText.textContent = data.display_reply;
+          assistantBadge.textContent = `Lang: ${data.language}`;
+          assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-sand text-charcoal border border-charcoal-border";
+          if (data.audio_b64) playAudioBase64(data.audio_b64);
+          return;
+        }
+
+        // 1. Mandatory Turn-1 AI Disclosure
+        if (data.type === 'TURN_1_AI_DISCLOSURE') {
+          lastTurnDisclosure = data;
+          assistantText.textContent = data.display_reply;
+          assistantBadge.textContent = "AI Disclosed";
+          assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-sage-light text-sage border border-sage-border";
+          
+          if (data.dashboard) renderDashboard(data.dashboard);
+          if (data.audio_b64) playAudioBase64(data.audio_b64);
+          return;
+        }
+
+        // 2. STT Ready Ack
+        if (data.type === 'STT_READY') {
+          console.log("Prisma STT Ready:", data.stt_provider);
+          return;
+        }
+
+        // 3. Partial transcript streaming
+        if (data.type === 'PARTIAL_TRANSCRIPT') {
+          userTranscript.textContent = `"${data.text}..."`;
+          return;
+        }
+
+        // 4. TTS Halted (Barge-In)
+        if (data.type === 'TTS_HALTED') {
+          console.log("TTS interrupted via Barge-In");
+          return;
+        }
+
+        // 5. Final Turn Result
+        if (data.type === 'VOICE_RESULT') {
+          lastVoiceResult = data;
+          btnMic.classList.remove('mic-active');
+          micHint.innerHTML = 'Hold button or press <kbd class="px-1.5 py-0.5 bg-sand border border-charcoal-border rounded text-[11px] font-mono">Space</kbd> to speak';
+          userTranscript.textContent = `"${data.raw_transcript}"`;
+          assistantText.textContent = data.display_reply;
+
+          // Latency badge
+          if (data.latency_ms) {
+            latencyVal.textContent = `${data.latency_ms} ms`;
+            const latPill = document.getElementById('latency-pill');
+            if (data.latency_ms < 1400) {
+              latPill.className = "flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-sage-light text-sage border border-sage-border";
+            } else {
+              latPill.className = "flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-sand text-charcoal border border-charcoal-border";
+            }
+          }
+
+          // Intent badge
+          assistantBadge.textContent = data.intent.replace(/_/g, ' ');
+          if (data.intent === 'GUARDRAIL_BLOCKED') {
+            assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-red-100 text-terracotta border border-terracotta-border";
+          } else if (data.intent === 'HOMONYM_CLARIFICATION_REQUIRED') {
+            assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300";
+          } else if (data.intent === 'CUSTOMER_CREATED') {
+            assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-teal-100 text-teal-800 border border-teal-300";
+          } else {
+            assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-sage-light text-sage border border-sage-border";
+          }
+
+          // Active language indication
+          if (data.detected_language) {
+            const codeSpan = document.getElementById('active-lang-code');
+            if (codeSpan) codeSpan.textContent = data.detected_language.toUpperCase();
+          }
+
+          // Render live ledger cards
+          if (data.dashboard) renderDashboard(data.dashboard);
+
+          // Play Audio (or browser speech synthesis fallback)
+          if (data.audio_b64) {
+            playAudioBase64(data.audio_b64);
+          } else if ('speechSynthesis' in window && data.tts_reply) {
+            const utt = new SpeechSynthesisUtterance(data.tts_reply);
+            utt.lang = data.detected_language || 'hi-IN';
+            window.speechSynthesis.speak(utt);
+          }
+        }
+      }
+
+      // ── Dashboard Rendering ───────────────────────────────────
+      function renderDashboard(dashboard) {
+        if (!dashboard) return;
+        lastDashboardState = dashboard;
+
+        summaryTodayCredit.textContent = `₹${dashboard.today_credit || 0}`;
+        summaryTodayPayment.textContent = `₹${dashboard.today_payment || 0}`;
+        purgeBadge.textContent = dashboard.encrypted_transcript_count || 0;
+
+        const countBadge = document.getElementById('accounts-count-badge');
+        if (countBadge && dashboard.customers) {
+          countBadge.textContent = `${dashboard.customers.length} Accounts`;
+        }
+
+        if (!dashboard.customers) return;
+
+        customerCardsContainer.innerHTML = dashboard.customers.map(c => {
+          const bal = c.net_balance;
+          const isOwing = bal > 0;
+          const isZero = bal === 0;
+
+          return `
+            <div class="bg-white rounded-2xl p-5 border border-charcoal-border shadow-xs hover:border-terracotta-border transition">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <div class="flex items-center space-x-2">
+                    <h3 class="text-base font-bold text-charcoal">${c.full_name}</h3>
+                    <span class="text-[11px] font-medium text-charcoal-muted bg-sand px-2 py-0.5 rounded-md border border-charcoal-border/50">
+                      📍 ${c.landmark}
+                    </span>
+                  </div>
+                  <p class="text-xs text-charcoal-muted mt-0.5 font-mono">${c.phone}</p>
+                </div>
+                
+                <div class="text-right">
+                  <span class="text-[10px] font-bold uppercase tracking-wider block ${isOwing ? 'text-terracotta' : 'text-sage'}">
+                    ${isOwing ? 'Udhaar (Pending)' : (isZero ? 'Settled' : 'Advance')}
+                  </span>
+                  <span class="text-xl sm:text-2xl font-black font-serif ${isOwing ? 'text-terracotta' : 'text-sage'}">
+                    ₹${Math.abs(bal)}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Controls: Opt-In Reminder & Polite Message -->
+              <div class="mt-4 pt-3 border-t border-sand flex items-center justify-between text-xs gap-2 flex-wrap">
+                <label class="flex items-center space-x-2 cursor-pointer select-none">
+                  <input type="checkbox" ${c.opt_in_reminder ? 'checked' : ''} onchange="toggleOptIn(${c.id}, this.checked)" class="w-4 h-4 rounded text-terracotta focus:ring-terracotta border-charcoal-border">
+                  <span class="font-medium text-charcoal text-[11px]">Reminder Opt-In</span>
+                </label>
+
+                <button onclick="requestReminder(${c.id})" class="px-2.5 py-1 rounded-lg font-bold text-[11px] border ${c.opt_in_reminder ? 'bg-sage-light text-sage border-sage-border hover:bg-sage hover:text-white' : 'bg-red-50 text-terracotta border-red-200'} transition flex items-center space-x-1">
+                  <span>${c.opt_in_reminder ? '✉️ Send Reminder' : '🚫 Opted-Out'}</span>
+                </button>
+              </div>
+
+              <!-- Recent Transaction Mini-Audit List -->
+              ${c.recent_transactions && c.recent_transactions.length > 0 ? `
+                <div class="mt-3 pt-3 border-t border-sand/60">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-charcoal-muted block mb-1.5">Recent Ledger Activity</span>
+                  <div class="space-y-1 max-h-32 overflow-y-auto pr-1">
+                    ${c.recent_transactions.map(t => {
+                      const isRev = t.status === 'REVERSED';
+                      const isCred = t.tx_type === 'CREDIT';
+                      return `
+                        <div class="flex items-center justify-between text-[11px] py-1 px-2 rounded-lg ${isRev ? 'bg-red-50/70 text-charcoal-muted line-through' : 'bg-canvas text-charcoal'}">
+                          <div class="flex items-center space-x-1.5">
+                            <span class="font-bold ${isCred ? 'text-terracotta' : 'text-sage'}">${isCred ? '+₹' : '-₹'}${t.amount}</span>
+                            <span class="text-charcoal-muted">${t.relative_label || t.tx_date}</span>
+                            ${isRev ? '<span class="text-[9px] font-bold text-red-600 bg-red-100 px-1 rounded no-underline">REVERSED</span>' : ''}
+                          </div>
+                          <span class="text-[10px] text-charcoal-muted italic truncate max-w-[120px]">${t.raw_note || ''}</span>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
+            </div>
+          `;
+        }).join('');
+      }
+
+      // ── API Actions ───────────────────────────────────────────
+      window.toggleOptIn = async function(customerId, optIn) {
+        try {
+          const resp = await fetch('/api/customer/opt-in', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ customer_id: customerId, opt_in: optIn })
+          });
+          const data = await resp.json();
+          renderDashboard(data.dashboard);
+          showToast(`Customer reminder opt-in set to: ${optIn ? 'Active' : 'Disabled'}`);
+        } catch (err) {
+          showToast("Failed to update opt-in preference", true);
+        }
+      };
+
+      // ── Polite Reminder Modal with WhatsApp + SMS + Scannable UPI QR ──
+      window.requestReminder = async function(customerId) {
+        const customer = lastDashboardState && lastDashboardState.customers
+          ? lastDashboardState.customers.find(c => c.id === customerId)
+          : null;
+
+        try {
+          const resp = await fetch(`/api/customer/${customerId}/reminder`);
+          if (resp.status === 200) {
+            const data = await resp.json();
+            const bal = customer ? customer.net_balance : 0;
+            const phoneDigits = customer ? customer.phone.replace(/[^0-9]/g, '') : '';
+            const encMsg = encodeURIComponent(data.message || '');
+            const upiString = `upi://pay?pa=vaanikhata@upi&pn=VaaniKhata+Kirana&am=${Math.max(bal, 0)}&cu=INR`;
+
+            modalBody.innerHTML = `
+              <div class="p-3.5 bg-sage-light rounded-xl border border-sage-border mb-3">
+                <span class="text-[11px] font-bold text-sage uppercase tracking-wider block">DPDP Act Guardrail: Permitted</span>
+                <p class="text-sm font-semibold text-charcoal mt-1">Customer has provided active reminder consent.</p>
+              </div>
+
+              <p class="text-[11px] text-charcoal-muted uppercase font-bold tracking-wider mb-1">Generated Zero-Pressure Spoken Reminder:</p>
+              <div class="p-3 bg-canvas rounded-xl border border-charcoal-border text-xs leading-relaxed text-charcoal font-medium">
+                ${data.message}
+              </div>
+
+              ${bal > 0 ? `
+                <!-- Scannable UPI Settlement QR Code -->
+                <div class="my-3.5 p-3.5 bg-white rounded-xl border border-charcoal-border flex flex-col items-center text-center shadow-xs">
+                  <div class="flex items-center space-x-1.5 mb-2">
+                    <span class="text-xs font-bold text-charcoal uppercase tracking-wider">Scannable UPI Settlement QR</span>
+                  </div>
+                  <div id="qrcode-target" class="p-2 bg-white rounded-lg border border-charcoal-border/50"></div>
+                  <p class="text-xs font-bold text-charcoal mt-2">Scan with GPay / PhonePe / Paytm / BHIM</p>
+                  <p class="text-[11px] text-charcoal-muted font-mono mt-0.5">Settlement Amount: ₹${bal}</p>
+                </div>
+              ` : ''}
+
+              <!-- Direct Dispatch Action Buttons -->
+              <div class="grid grid-cols-2 gap-2 mt-4">
+                <a href="https://wa.me/${phoneDigits}?text=${encMsg}" target="_blank" rel="noopener noreferrer" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-center text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-xs">
+                  <span>💬</span>
+                  <span>Open WhatsApp</span>
+                </a>
+                <a href="sms:${customer ? customer.phone : ''}?body=${encMsg}" class="px-3 py-2 bg-charcoal hover:bg-black text-white rounded-xl text-center text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-xs">
+                  <span>📱</span>
+                  <span>Send SMS</span>
+                </a>
+              </div>
+            `;
+            reminderModal.classList.remove('hidden');
+
+            // Render QR Code via qrcodejs
+            if (bal > 0 && window.QRCode) {
+              setTimeout(() => {
+                const target = document.getElementById('qrcode-target');
+                if (target) {
+                  target.innerHTML = '';
+                  new QRCode(target, {
+                    text: upiString,
+                    width: 124,
+                    height: 124,
+                    colorDark: "#1A1A1A",
+                    colorLight: "#FFFFFF",
+                    correctLevel: QRCode.CorrectLevel.M
+                  });
+                }
+              }, 60);
+            }
+
+          } else if (resp.status === 403) {
+            const err = await resp.json();
+            modalBody.innerHTML = `
+              <div class="p-4 bg-red-50 rounded-xl border border-red-200">
+                <span class="text-xs font-bold text-terracotta uppercase tracking-wider block">🚫 BLOCKED BY GUARDRAIL</span>
+                <p class="text-sm font-semibold text-charcoal mt-1">${err.detail}</p>
+                <p class="text-xs text-charcoal-muted mt-2">Under the Digital Personal Data Protection (DPDP) Act, unsolicited payment reminders are strictly blocked for customers who have opted out.</p>
+              </div>
+            `;
+            reminderModal.classList.remove('hidden');
+          }
+        } catch (err) {
+          showToast("Error testing reminder endpoint", true);
+        }
+      };
+
+      // ── Add Member Modal Logic ────────────────────────────────
+      btnOpenAddMember.addEventListener('click', () => {
+        addMemberModal.classList.remove('hidden');
+      });
+
+      function closeAddMemberModal() {
+        addMemberModal.classList.add('hidden');
+        formAddMember.reset();
+      }
+
+      btnCloseAddMember.addEventListener('click', closeAddMemberModal);
+      btnCancelAddMember.addEventListener('click', closeAddMemberModal);
+
+      formAddMember.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const firstName = document.getElementById('add-first-name').value.trim();
+        const lastName = document.getElementById('add-last-name').value.trim();
+        const landmark = document.getElementById('add-landmark').value.trim();
+        const phone = document.getElementById('add-phone').value.trim();
+        const openingBalance = parseInt(document.getElementById('add-opening-balance').value, 10) || 0;
+        const optIn = document.getElementById('add-opt-in').checked;
+
+        if (!firstName || !landmark || !phone) {
+          showToast("Please enter First Name, Area, and Phone", true);
+          return;
+        }
+
+        try {
+          const resp = await fetch('/api/customers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              first_name: firstName,
+              last_name: lastName,
+              landmark: landmark,
+              phone: phone,
+              opening_balance: openingBalance,
+              opt_in_reminder: optIn
+            })
+          });
+
+          if (resp.status === 201) {
+            const data = await resp.json();
+            renderDashboard(data.dashboard);
+            closeAddMemberModal();
+            showToast(`Added ${data.customer.full_name} (${data.customer.landmark}) to Khata!`);
+          } else {
+            const err = await resp.json();
+            showToast(err.detail || "Failed to create customer", true);
+          }
+        } catch (err) {
+          showToast("Error connecting to server", true);
+        }
+      });
+
+      // ── Push-to-Talk PCM Capture ──────────────────────────────
+      let recordPressTime = 0;
+      let isToggleListening = false;
+      let localRecognizer = null;
+      let localTranscript = "";
+
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        localRecognizer = new SpeechRec();
+        localRecognizer.continuous = true;
+        localRecognizer.interimResults = true;
+
+        localRecognizer.onresult = (event) => {
+          let full = '';
+          for (let i = 0; i < event.results.length; ++i) {
+            full += event.results[i][0].transcript;
+          }
+          localTranscript = full.trim();
+          if (localTranscript) {
+            userTranscript.textContent = `"${localTranscript}..."`;
+          }
+        };
+
+        localRecognizer.onerror = (e) => {
+          console.log("Local speech recognition notice:", e.error);
+        };
+      }
+
+      async function startRecording() {
+        if (isRecording) {
+          stopRecording(true);
+          return;
+        }
+
+        recordPressTime = Date.now();
+        isRecording = true;
+        isToggleListening = false;
+        localTranscript = "";
+
+        // Start local laptop speech recognizer in parallel
+        if (localRecognizer) {
+          try {
+            localRecognizer.lang = currentLanguage === 'auto' ? 'hi-IN' : currentLanguage;
+            localRecognizer.start();
+          } catch (e) {}
+        }
+
+        // Barge-In: Halt any currently playing TTS speech immediately
+        if (currentSourceNode) {
+          try { currentSourceNode.stop(); } catch (e) {}
+          currentSourceNode = null;
+        }
+        ttsAudio.pause();
+        ttsAudio.currentTime = 0;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'BARGE_IN' }));
+        }
+
+        btnMic.classList.add('mic-active');
+        micHint.textContent = "Listening... Speak now";
+
+        ensureAudioUnlocked();
+
+        try {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+              throw new Error("Chrome blocks mic on IP addresses. Please use http://localhost:8000 or use 1-Click Quick Chips below!");
+            } else {
+              throw new Error("Microphone not available on this device.");
+            }
+          }
+
+          try {
+            micStream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+              }
+            });
+          } catch (conErr) {
+            micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          }
+
+          const source = audioCtx.createMediaStreamSource(micStream);
+
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'START_AUDIO' }));
+          }
+
+          try {
+            await audioCtx.audioWorklet.addModule('/audio-processor.js');
+            audioWorkletNode = new AudioWorkletNode(audioCtx, 'pcm-audio-processor');
+            audioWorkletNode.port.onmessage = (event) => {
+              if (isRecording && ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(event.data);
+              }
+            };
+            source.connect(audioWorkletNode);
+          } catch (workletErr) {
+            console.log("Using ScriptProcessorNode fallback");
+            scriptProcessorNode = audioCtx.createScriptProcessor(4096, 1, 1);
+            scriptProcessorNode.onaudioprocess = (e) => {
+              if (!isRecording) return;
+              const inputData = e.inputBuffer.getChannelData(0);
+              const buffer = new Int16Array(inputData.length);
+              for (let i = 0; i < inputData.length; i++) {
+                const s = Math.max(-1, Math.min(1, inputData[i]));
+                buffer[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+              }
+              if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(buffer.buffer);
+              }
+            };
+            source.connect(scriptProcessorNode);
+            scriptProcessorNode.connect(audioCtx.destination);
+          }
+
+        } catch (err) {
+          console.error("Mic access failed:", err);
+          isRecording = false;
+          isToggleListening = false;
+          btnMic.classList.remove('mic-active');
+          const errorMsg = err.name === 'NotAllowedError'
+            ? 'Mic permission blocked. Click the lock/tune icon near URL to Allow microphone.'
+            : (err.message || 'Mic access failed');
+          micHint.textContent = errorMsg;
+          showToast(errorMsg, true);
+        }
+      }
+
+      function stopRecording(force = false) {
+        if (!isRecording) return;
+
+        const duration = Date.now() - recordPressTime;
+        if (!force && duration < 350 && !isToggleListening) {
+          isToggleListening = true;
+          micHint.textContent = "Listening... Tap mic button again when done speaking";
+          return;
+        }
+
+        isRecording = false;
+        isToggleListening = false;
+
+        if (localRecognizer) {
+          try { localRecognizer.stop(); } catch (e) {}
+        }
+
+        btnMic.classList.remove('mic-active');
+        micHint.textContent = "Processing speech via Gnani Prisma v3.0...";
+
+        if (micStream) {
+          micStream.getTracks().forEach(track => track.stop());
+          micStream = null;
+        }
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: 'COMMIT',
+            text: localTranscript.trim(),
+            language: currentLanguage === 'auto' ? 'hi-IN' : currentLanguage
+          }));
+        }
+      }
+
+      // Mic pointer events
+      btnMic.addEventListener('pointerdown', (e) => {
+        ensureAudioUnlocked();
+        e.preventDefault();
+        startRecording();
+      });
+      window.addEventListener('pointerup', () => stopRecording());
+
+      // Spacebar hold
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !e.repeat && document.activeElement.tagName !== 'INPUT') {
+          ensureAudioUnlocked();
+          e.preventDefault();
+          startRecording();
+        }
+      });
+      window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          stopRecording();
+        }
+      });
+
+      // ── Preset Chips Click Handler ────────────────────────────
+      document.querySelectorAll('.chip-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          ensureAudioUnlocked();
+          const text = btn.getAttribute('data-text');
+          if (!text) return;
+
+          if (currentSourceNode) {
+            try { currentSourceNode.stop(); } catch (e) {}
+            currentSourceNode = null;
+          }
+          ttsAudio.pause();
+          ttsAudio.currentTime = 0;
+
+          userTranscript.textContent = `"${text}"`;
+          assistantBadge.textContent = "Processing";
+          assistantBadge.className = "px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300";
+
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'UTTERANCE',
+              text: text,
+              language: currentLanguage === 'auto' ? 'hi-IN' : currentLanguage
+            }));
+          } else {
+            showToast("WebSocket connecting, please retry in a second...", true);
+          }
+        });
+      });
+
+      // ── Replay Handlers ───────────────────────────────────────
+      document.getElementById('btn-replay-last').addEventListener('click', () => {
+        ensureAudioUnlocked();
+        if (lastVoiceResult && lastVoiceResult.audio_b64) {
+          playAudioBase64(lastVoiceResult.audio_b64);
+        } else if (lastTurnDisclosure && lastTurnDisclosure.audio_b64) {
+          playAudioBase64(lastTurnDisclosure.audio_b64);
+        }
+      });
+
+      document.getElementById('btn-replay-disclosure').addEventListener('click', () => {
+        ensureAudioUnlocked();
+        if (lastTurnDisclosure && lastTurnDisclosure.audio_b64) {
+          playAudioBase64(lastTurnDisclosure.audio_b64);
+          showToast("Playing Turn-1 AI Disclosure aloud");
+        }
+      });
+
+      document.getElementById('btn-test-voice').addEventListener('click', async () => {
+        ensureAudioUnlocked();
+        if (lastTurnDisclosure && lastTurnDisclosure.audio_b64) {
+          playAudioBase64(lastTurnDisclosure.audio_b64);
+          showToast("Playing Turn-1 Spoken Hindi aloud");
+        } else {
+          showToast("Synthesizing live audio via Gnani Timbre v3.0...", false);
+          try {
+            const resp = await fetch('/api/voice-turn', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: 'Ramesh ka teen sau chaalis udhaar', language: 'hi-IN' })
+            });
+            const data = await resp.json();
+            if (data.audio_b64) {
+              playAudioBase64(data.audio_b64);
+              showToast("Playing synthesized Kirana audio aloud!");
+            }
+          } catch (e) {
+            showToast("Audio test request failed", true);
+          }
+        }
+      });
+
+      // ── DPDP Purge Handler ────────────────────────────────────
+      document.getElementById('btn-purge-dpdp').addEventListener('click', async () => {
+        try {
+          const resp = await fetch('/api/dpdp/purge', { method: 'POST' });
+          const data = await resp.json();
+          purgeBadge.textContent = '0';
+          showToast(`DPDP Purge: Permanently deleted ${data.deleted_count} voice transcripts.`);
+        } catch (e) {
+          showToast("Purge failed", true);
+        }
+      });
+
+      // ── Reset Demo Handler ────────────────────────────────────
+      document.getElementById('btn-reset-demo').addEventListener('click', async () => {
+        try {
+          const resp = await fetch('/api/demo/reset', { method: 'POST' });
+          const data = await resp.json();
+          renderDashboard(data.dashboard);
+          showToast("Database cleanly reset to Pitch Deck opening math (Ramesh Sharma ₹0)");
+        } catch (e) {
+          showToast("Reset failed", true);
+        }
+      });
+
+      // ── Modal Dismiss ─────────────────────────────────────────
+      btnCloseModal.addEventListener('click', () => reminderModal.classList.add('hidden'));
+      btnModalDismiss.addEventListener('click', () => reminderModal.classList.add('hidden'));
+
+      // ── Initial Load ──────────────────────────────────────────
+      fetch('/api/state')
+        .then(res => res.json())
+        .then(dash => renderDashboard(dash))
+        .catch(() => {});
+
+      connectWebSocket();
+    })();
+  </script>
+</body>
+</html>
