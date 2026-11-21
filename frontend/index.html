@@ -183,7 +183,7 @@
   <div id="audio-unlock-banner" class="bg-amber-100 text-amber-900 border-b border-amber-300 px-4 py-2 text-xs sm:text-sm font-medium flex items-center justify-between shadow-xs sticky top-0 z-50">
     <div class="flex items-center space-x-2">
       <span class="text-base">🔊</span>
-      <span>Click <strong>"Enable Audio"</strong> or click any preset chip to activate live voice playback.</span>
+      <span>Click <strong>"Enable Audio"</strong> or hold the microphone button to activate live voice playback.</span>
     </div>
     <button id="btn-unlock-audio" class="ml-3 px-3.5 py-1 bg-amber-600 text-white rounded-full font-bold text-xs uppercase tracking-wide hover:bg-amber-700 transition shadow-xs">
       Enable Audio
@@ -387,97 +387,6 @@
           </p>
         </div>
 
-      </div>
-
-      <!-- Quick-Trigger Preset Demo Scenario Chips (Pitch Deck Script) -->
-      <div class="bg-white rounded-2xl p-5 border border-charcoal-border shadow-xs">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-xs font-bold tracking-wider uppercase text-charcoal-muted">Judge Demo · 1-Click Quick Chips</h2>
-          <span class="text-[11px] text-terracotta font-bold">Fast Presets</span>
-        </div>
-        
-        <div class="flex flex-col space-y-2">
-          <!-- Turn 1 -->
-          <button data-text="Ramesh ka teen sau chaalis udhaar, kal do sau diya tha" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
-            <div>
-              <span class="font-bold text-terracotta block">Turn 1 · Multi-Entry Speech + Homonym</span>
-              <span class="text-charcoal-muted">"Ramesh ka teen sau chaalis udhaar, kal do sau diya tha"</span>
-            </div>
-            <span class="text-charcoal-muted font-mono ml-2">▶</span>
-          </button>
-
-          <!-- Turn 2 -->
-          <button data-text="Sharma" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
-            <div>
-              <span class="font-bold text-sage block">Turn 2 · Homonym Clarification</span>
-              <span class="text-charcoal-muted">"Sharma" (Resolves to Ramesh Sharma)</span>
-            </div>
-            <span class="text-charcoal-muted font-mono ml-2">▶</span>
-          </button>
-
-          <!-- Turn 3 -->
-          <button data-text="Nahi, 430 kar do" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
-            <div>
-              <span class="font-bold text-amber-700 block">Turn 3 · Atomic Voice Correction</span>
-              <span class="text-charcoal-muted">"Nahi, 430 kar do" (Reverses 340, sets 430 => ₹230)</span>
-            </div>
-            <span class="text-charcoal-muted font-mono ml-2">▶</span>
-          </button>
-
-          <!-- Turn 4A -->
-          <button data-text="Ramesh Sharma ka total?" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
-            <div>
-              <span class="font-bold text-charcoal block">Turn 4A · Customer Balance Query</span>
-              <span class="text-charcoal-muted">"Ramesh Sharma ka total?"</span>
-            </div>
-            <span class="text-charcoal-muted font-mono ml-2">▶</span>
-          </button>
-
-          <!-- Turn 4B -->
-          <button data-text="Aaj kitna udhaar gaya?" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
-            <div>
-              <span class="font-bold text-charcoal block">Turn 4B · Daily Store Summary</span>
-              <span class="text-charcoal-muted">"Aaj kitna udhaar gaya?"</span>
-            </div>
-            <span class="text-charcoal-muted font-mono ml-2">▶</span>
-          </button>
-
-          <!-- Turn 5 -->
-          <button data-text="Suresh ka 150 jama" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
-            <div>
-              <span class="font-bold text-sage block">Direct Payment Entry</span>
-              <span class="text-charcoal-muted">"Suresh ka 150 jama" (₹280 - 150 = ₹130)</span>
-            </div>
-            <span class="text-charcoal-muted font-mono ml-2">▶</span>
-          </button>
-
-          <!-- Regional Kannada Chip -->
-          <button data-text="Suresh ge 100 saala, ninne 50 kotta" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
-            <div>
-              <span class="font-bold text-indigo-600 block">Regional · Kannada Speech</span>
-              <span class="text-charcoal-muted">"Suresh ge 100 saala, ninne 50 kotta"</span>
-            </div>
-            <span class="text-charcoal-muted font-mono ml-2">▶</span>
-          </button>
-
-          <!-- Voice Add Member Chip -->
-          <button data-text="Naya grahak Manoj Gupta landmark Indiranagar khata kholo" class="chip-btn text-left p-2.5 rounded-xl border border-charcoal-border/70 hover:border-terracotta hover:bg-terracotta-light/40 transition flex items-center justify-between text-xs">
-            <div>
-              <span class="font-bold text-teal-600 block">Voice Add Customer</span>
-              <span class="text-charcoal-muted">"Naya grahak Manoj Gupta landmark Indiranagar khata kholo"</span>
-            </div>
-            <span class="text-charcoal-muted font-mono ml-2">▶</span>
-          </button>
-
-          <!-- Turn 6 (Guardrail) -->
-          <button data-text="Ramesh ko dhamki bhejo ya loan do" class="chip-btn text-left p-2.5 rounded-xl border border-red-200 bg-red-50/50 hover:bg-red-50 transition flex items-center justify-between text-xs">
-            <div>
-              <span class="font-bold text-red-700 block">AI Guardrail Check · Lending / Threat</span>
-              <span class="text-red-900/70">"Ramesh ko dhamki bhejo ya loan do"</span>
-            </div>
-            <span class="text-red-600 font-mono ml-2">🛡️</span>
-          </button>
-        </div>
       </div>
 
     </section>
