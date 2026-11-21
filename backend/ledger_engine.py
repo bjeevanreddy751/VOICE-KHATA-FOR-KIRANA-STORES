@@ -36,6 +36,7 @@ from backend.numeral_parser import (
 class SessionState:
     """Stateful context maintained per WebSocket voice session."""
     pending_disambiguation: Optional[dict[str, Any]] = None
+    pending_search_disambiguation: Optional[dict[str, Any]] = None
     last_committed_tx_id: Optional[int] = None
     last_customer_id: Optional[int] = None
     last_customer_name: Optional[str] = None
@@ -96,7 +97,10 @@ _DAILY_SUMMARY_TRIGGERS = [
     "kitna jama hua", "aaj kitna jama hua", "aaj ka len den", "ivattina hisaabu",
     "inraiya kanakku", "ee roju hisaabu", "aajcha hisaab", "ivattina summary",
     "inraiya summary", "ee roju summary", "aajcha summary", "today's summary",
-    "daily store summary", "store hisaab", "total collection",
+    "daily store summary", "store hisaab", "total collection", "aaj ki collection",
+    "aaj ka balance", "dukan ka hisaab", "dukaan ka hisaab", "store ka hisaab",
+    "dukan hisaab", "dukaan hisaab", "day book", "aaj ka daybook", "aaj ki tally",
+    "aaj ka hisaabu", "inraiya hisaabu", "aaj ka lenden",
 ]
 
 # Balance query keywords
@@ -177,6 +181,12 @@ def get_ai_disclosure(lang: str = "hi-IN") -> str:
 def _strip_digits_for_tts(text: str, lang: str = "hi-IN") -> str:
     """Ensure strictly zero ASCII digits exist in the TTS output string."""
     clean = re.sub(r"[₹]", "", text)
+    # Convert negative figures ("-350") into natural spoken words before digit removal
+    clean = re.sub(
+        r"-\s*(\d+)",
+        lambda m: f"minus {number_to_spoken_words(int(m.group(1)), lang=lang)}",
+        clean,
+    )
     return re.sub(r"\b(\d+)\b", lambda m: number_to_spoken_words(int(m.group(1)), lang=lang), clean)
 
 
@@ -243,6 +253,7 @@ def process_utterance(
     # Normalize spoken numbers, fractions & digits
     norm_text = normalize_spoken_numbers(trans_text)
     norm_low = norm_text.lower()
+    nums_in_text = [int(n) for n in re.findall(r"\b\d+\b", norm_text)]
 
     # -----------------------------------------------------------------------
     # Step 0 — Responsible AI Money & Safety Guardrail Check
@@ -426,6 +437,65 @@ def process_utterance(
                 "dashboard": database.fetch_dashboard_state(db_path=db_path),
             }
 
+    # Step 1.5 — Pending Customer Search Homonym Follow-up
+    if session.pending_search_disambiguation is not None and not nums_in_text:
+        pending_search = session.pending_search_disambiguation
+        candidates = pending_search["candidates"]
+        chosen_cust = None
+        for cand in candidates:
+            c_last = cand["last_name"].lower()
+            c_land = cand["landmark"].lower()
+            c_full = cand["full_name"].lower()
+            if (c_last and c_last in norm_low) or (c_land and c_land in norm_low) or (c_full and c_full in norm_low):
+                chosen_cust = cand
+                break
+
+        if chosen_cust is not None:
+            session.pending_search_disambiguation = None
+            target_cust = database.get_customer_with_timeline(chosen_cust["id"], db_path=db_path) or chosen_cust
+            bal = target_cust["net_balance"]
+            highlight_id = target_cust["id"]
+            timeline_data = target_cust.get("recent_transactions", [])
+            spoken_bal = number_to_spoken_words(bal, lang=active_lang)
+
+            if active_lang == "kn-IN":
+                disp = f"{target_cust['full_name']} ({target_cust['landmark']}) hisaabu: Kul baaki ₹{bal}."
+                tts = f"{target_cust['full_name']} hisaabu: Kul baaki {spoken_bal} rupaye."
+            elif active_lang == "ta-IN":
+                disp = f"{target_cust['full_name']} ({target_cust['landmark']}) kanakku: Meedhi ₹{bal}."
+                tts = f"{target_cust['full_name']} kanakku: Meedhi {spoken_bal} roobai."
+            elif active_lang == "te-IN":
+                disp = f"{target_cust['full_name']} ({target_cust['landmark']}) hisaabu: Net baaki ₹{bal}."
+                tts = f"{target_cust['full_name']} hisaabu: Net baaki {spoken_bal} roopayalu."
+            elif active_lang == "mr-IN":
+                disp = f"{target_cust['full_name']} ({target_cust['landmark']}) che hisaab: Kul baaki ₹{bal}."
+                tts = f"{target_cust['full_name']} che hisaab: Kul baaki {spoken_bal} rupaye."
+            elif active_lang == "en-IN":
+                disp = f"Showing {target_cust['full_name']} ({target_cust['landmark']}): Net balance ₹{bal}."
+                tts = f"Showing {target_cust['full_name']}. Net balance is {spoken_bal} rupees."
+            else:
+                disp = f"{target_cust['full_name']} ({target_cust['landmark']}) ka hisaab: Kul baaki ₹{bal}."
+                tts = f"{target_cust['full_name']} ka hisaab: Kul baaki {spoken_bal} rupaye hai."
+
+            tts = _strip_digits_for_tts(tts, lang=active_lang)
+            intent = INTENT_CUSTOMER_SEARCH
+            latency_ms = (time.perf_counter() - t0) * 1000
+            database.log_encrypted_transcript(raw_clean, disp, intent, int(latency_ms), db_path=db_path)
+            return {
+                "raw_transcript": raw_clean,
+                "normalized_transcript": norm_text,
+                "detected_language": active_lang,
+                "intent": intent,
+                "display_reply": disp,
+                "tts_reply": tts,
+                "engine_latency_ms": round(latency_ms, 2),
+                "has_pending_disambiguation": False,
+                "highlight_customer_id": highlight_id,
+                "customer": target_cust,
+                "timeline": timeline_data,
+                "dashboard": database.fetch_dashboard_state(db_path=db_path),
+            }
+
     # -----------------------------------------------------------------------
     # Step 2 — Atomic Mid-Sale Voice Correction ("Nahi, 430" / "Nahi, 430 kar do")
     # -----------------------------------------------------------------------
@@ -555,9 +625,10 @@ def process_utterance(
         no_punct = re.sub(r"[?!.,;:]", " ", norm_low)
         # Extract customer name tokens by removing query and search stop words
         cleaned = re.sub(
-            r"\b(ka|ki|ke|ko|ge|ku|chi|cha|che|total|kitna|baaki|baki|hisaab|hisab|balance|hai|batao|dekhna|karo|eshtu|evlo|entha|kiti|due|search|show|dikhao|dekho|nodi|kaattu|choopinchu|dakhav|dhoondo|khojo|open|kholo|timeline|details|account|khaata|khata|please|me)\b",
+            r"\b(ka|ki|ke|ko|ge|ku|chi|cha|che|avara|total|kitna|baaki|baki|hisaab|hisab|hisaabu|kanakku|khaatha|khaate|balance|hai|batao|dekhna|karo|eshtu|evlo|entha|kiti|due|search|show|dikhao|dekho|nodi|kaattu|choopinchu|dakhav|dhoondo|khojo|open|kholo|timeline|details|account|khaata|khata|please|me|ji|bhai|bhaiya|anna|garu|avargal|sahab|saab|sir|chechi|seth|sethji|shree|sri)\b",
             " ",
             no_punct,
+            flags=re.IGNORECASE,
         )
         cleaned = re.sub(r"\s+", " ", cleaned).strip()
 
@@ -626,20 +697,66 @@ def process_utterance(
                 if active_lang == "en-IN":
                     disp = f"{target_cust['full_name']} total balance: ₹{bal}."
                     tts = f"{target_cust['full_name']} total balance is {spoken_bal} rupees."
+                elif active_lang == "kn-IN":
+                    disp = f"{target_cust['full_name']} kul baaki: ₹{bal}."
+                    tts = f"{target_cust['full_name']} kul baaki {spoken_bal} rupaye."
+                elif active_lang == "ta-IN":
+                    disp = f"{target_cust['full_name']} meedhi: ₹{bal}."
+                    tts = f"{target_cust['full_name']} meedhi {spoken_bal} roobai."
+                elif active_lang == "te-IN":
+                    disp = f"{target_cust['full_name']} kul baaki: ₹{bal}."
+                    tts = f"{target_cust['full_name']} kul baaki {spoken_bal} roopayalu."
+                elif active_lang == "mr-IN":
+                    disp = f"{target_cust['full_name']} che kul baaki: ₹{bal}."
+                    tts = f"{target_cust['full_name']} che kul baaki {spoken_bal} rupaye."
                 else:
                     disp = f"{target_cust['full_name']} ka kul baaki: ₹{bal}."
                     tts = f"{target_cust['full_name']} ka kul baaki {spoken_bal} rupaye hai."
                 intent = INTENT_CUSTOMER_SEARCH if has_search_keyword else INTENT_CUSTOMER_BALANCE_QUERY
             else:
+                session.pending_search_disambiguation = {
+                    "candidates": matches,
+                }
                 disp_parts = [f"{m['full_name']} ({m['landmark']}): ₹{m['net_balance']}" for m in matches]
                 tts_parts = [f"{m['full_name']} {m['landmark']} {number_to_spoken_words(m['net_balance'], lang=active_lang)} rupaye" for m in matches]
-                disp = "Do grahak mile: " + ", ".join(disp_parts) + "."
-                tts = "Do grahak mile: " + ", aur ".join(tts_parts) + "."
+                cnt_str = str(len(matches))
+                cnt_word = number_to_spoken_words(len(matches), lang=active_lang)
+
+                if active_lang == "en-IN":
+                    disp = f"Found {cnt_str} matching customers: " + ", ".join(disp_parts) + "."
+                    tts = f"Found {cnt_word} matching customers: " + ", and ".join(tts_parts) + "."
+                elif active_lang == "kn-IN":
+                    disp = f"{cnt_str} grahakaru sikkidhaare: " + ", ".join(disp_parts) + "."
+                    tts = f"{cnt_word} grahakaru sikkidhaare: " + ", matthu ".join(tts_parts) + "."
+                elif active_lang == "ta-IN":
+                    disp = f"{cnt_str} vaadikkaiyaalargal kidaithullargal: " + ", ".join(disp_parts) + "."
+                    tts = f"{cnt_word} vaadikkaiyaalargal kidaithullargal: " + ", mattrum ".join(tts_parts) + "."
+                elif active_lang == "te-IN":
+                    disp = f"{cnt_str} customerlu kanipenchaaru: " + ", ".join(disp_parts) + "."
+                    tts = f"{cnt_word} customerlu kanipenchaaru: " + ", mariyu ".join(tts_parts) + "."
+                elif active_lang == "mr-IN":
+                    disp = f"{cnt_str} grahak sapadle: " + ", ".join(disp_parts) + "."
+                    tts = f"{cnt_word} grahak sapadle: " + ", aani ".join(tts_parts) + "."
+                else:
+                    disp = f"{cnt_str} grahak mile: " + ", ".join(disp_parts) + "."
+                    tts = f"{cnt_word} grahak mile: " + ", aur ".join(tts_parts) + "."
                 intent = INTENT_HOMONYM_CUSTOMER_SEARCH if has_search_keyword else INTENT_HOMONYM_BALANCE_QUERY
         else:
             if active_lang == "en-IN":
                 disp = f"Sorry, no customer found matching '{cleaned}'."
                 tts = f"Sorry, no customer found matching {cleaned}."
+            elif active_lang == "kn-IN":
+                disp = f"Kshamisi, '{cleaned}' hesarina yaava grahakaru sigalilla."
+                tts = "Kshamisi, ee hesarina yaava grahakaru sigalilla."
+            elif active_lang == "ta-IN":
+                disp = f"Mannikkavum, '{cleaned}' peyaril vaadikkaiyaalar illai."
+                tts = "Mannikkavum, indha peyaril vaadikkaiyaalar illai."
+            elif active_lang == "te-IN":
+                disp = f"Kshaminchandi, '{cleaned}' perutho evee customer dorakaledhu."
+                tts = "Kshaminchandi, ee perutho evee customer dorakaledhu."
+            elif active_lang == "mr-IN":
+                disp = f"Maaf kara, '{cleaned}' naavacha kontahi grahak sapadla nahi."
+                tts = "Maaf kara, ya naavacha kontahi grahak sapadla nahi."
             else:
                 disp = f"Maaf kijiye, '{cleaned}' naam ka koi grahak nahi mila."
                 tts = "Maaf kijiye, is naam ka koi grahak nahi mila."
@@ -728,19 +845,28 @@ def process_utterance(
     # Identify target customer name from utterance
     candidate_name = ""
     name_match = re.search(
-        r"\b([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(?:ka|ki|ke|ko|ge|ku|chi|cha|che|'s)\b",
+        r"\b([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(?:ka|ki|ke|ko|ge|ku|chi|cha|che|avara|'s)\b",
         norm_text,
         re.IGNORECASE,
     )
-    if name_match and _is_valid_customer_name(name_match.group(1)):
-        candidate_name = name_match.group(1).strip()
+    if name_match:
+        cand_raw = name_match.group(1).strip()
+        cand_clean = re.sub(
+            r"\b(?:ji|bhai|bhaiya|anna|garu|avargal|sahab|saab|sir|chechi|seth|sethji|shree|sri)\b",
+            "",
+            cand_raw,
+            flags=re.IGNORECASE,
+        ).strip()
+        cand_final = cand_clean if (cand_clean and _is_valid_customer_name(cand_clean)) else cand_raw
+        if _is_valid_customer_name(cand_final):
+            candidate_name = cand_final
     else:
         # Check tokens before any number or transaction/stop word
         stop_tokens = {
             "udhaar", "udhaari", "saala", "kadan", "appu", "jama", "credit", "payment",
             "paid", "received", "diya", "diye", "kotta", "kottidda", "kodutha", "kudutha",
             "ichadu", "ichanu", "dile", "dilas", "bharle", "bhara", "aaya", "aaye", "cleared",
-            "ka", "ki", "ke", "ko", "ge", "ku", "chi", "cha", "che", "kal", "aaj", "today",
+            "ka", "ki", "ke", "ko", "ge", "ku", "chi", "cha", "che", "avara", "kal", "aaj", "today",
             "yesterday", "ninne", "netru", "nethu", "ninna",
         }
         tokens = norm_text.split()
@@ -754,14 +880,19 @@ def process_utterance(
             prefix_words.append(t_clean)
 
         if prefix_words:
-            two_words = " ".join(prefix_words[:2])
-            one_word = prefix_words[0]
-            if len(prefix_words) >= 2 and database.find_customers_by_name(two_words, db_path=db_path):
+            # Strip trailing honorifics from prefix words if any
+            honorific_set = {"ji", "bhai", "bhaiya", "anna", "garu", "avargal", "sahab", "saab", "sir", "chechi", "seth", "sethji", "shree", "sri"}
+            filtered_prefix = [w for w in prefix_words if w.lower() not in honorific_set]
+            use_prefix = filtered_prefix if filtered_prefix else prefix_words
+
+            two_words = " ".join(use_prefix[:2])
+            one_word = use_prefix[0]
+            if len(use_prefix) >= 2 and database.find_customers_by_name(two_words, db_path=db_path):
                 candidate_name = two_words
             elif database.find_customers_by_name(one_word, db_path=db_path):
                 candidate_name = one_word
             else:
-                candidate_name = two_words if len(prefix_words) >= 2 else one_word
+                candidate_name = two_words if len(use_prefix) >= 2 else one_word
         else:
             for_match = re.search(r"\bfor\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)\b", norm_text, re.IGNORECASE)
             if for_match and _is_valid_customer_name(for_match.group(1)):
@@ -921,6 +1052,15 @@ def process_utterance(
             elif active_lang == "kn-IN":
                 disp = f"{cust['full_name']} avara {len(entries)} len-den serisalaagide. Kul baaki: ₹{new_bal}."
                 tts = f"{cust['full_name']} avara {cnt_words} len-den serisalaagide. Kul baaki {spoken_bal} rupaye."
+            elif active_lang == "ta-IN":
+                disp = f"{cust['full_name']} kanakkil {len(entries)} parivarthanaigal pathivu seiyappattana. Meedhi: ₹{new_bal}."
+                tts = f"{cust['full_name']} kanakkil {cnt_words} parivarthanaigal pathivu seiyappattana. Meedhi {spoken_bal} roobai."
+            elif active_lang == "te-IN":
+                disp = f"{cust['full_name']} khaathaalo {len(entries)} len-denlu cherchabadinaayi. Net baaki: ₹{new_bal}."
+                tts = f"{cust['full_name']} khaathaalo {cnt_words} len-denlu cherchabadinaayi. Net baaki {spoken_bal} roopayalu."
+            elif active_lang == "mr-IN":
+                disp = f"{cust['full_name']} chya khaatyaat {len(entries)} vyavahar nondavle. Kul baaki: ₹{new_bal}."
+                tts = f"{cust['full_name']} chya khaatyaat {cnt_words} vyavahar nondavle. Kul baaki {spoken_bal} rupaye."
             else:
                 disp = f"{cust['full_name']} ke {len(entries)} len-den darj kiye gaye. Kul baaki: ₹{new_bal}."
                 tts = f"{cust['full_name']} ke {cnt_words} len-den darj kiye gaye. Kul baaki {spoken_bal} rupaye hai."
@@ -1000,6 +1140,15 @@ def process_utterance(
             elif active_lang == "kn-IN":
                 disp = f"Hosa grahaka {new_cust['full_name']} (Local) serisalaagide mathu {len(entries)} len-den serisalaagide. Kul baaki: ₹{new_bal}."
                 tts = f"Hosa grahaka {new_cust['full_name']} serisalaagide mathu {cnt_words} len-den serisalaagide. Kul baaki {spoken_bal} rupaye."
+            elif active_lang == "ta-IN":
+                disp = f"Pudhiya vaadikkaiyaalar {new_cust['full_name']} (Local) serkkappattar mattrum {len(entries)} parivarthanaigal pathivu seiyappattana. Meedhi: ₹{new_bal}."
+                tts = f"Pudhiya vaadikkaiyaalar {new_cust['full_name']} serkkappattar mattrum {cnt_words} parivarthanaigal pathivu seiyappattana. Meedhi {spoken_bal} roobai."
+            elif active_lang == "te-IN":
+                disp = f"Kottha customer {new_cust['full_name']} (Local) cherchabadindhi mariyu {len(entries)} len-denlu cherchabadinaayi. Net baaki: ₹{new_bal}."
+                tts = f"Kottha customer {new_cust['full_name']} cherchabadindhi mariyu {cnt_words} len-denlu cherchabadinaayi. Net baaki {spoken_bal} roopayalu."
+            elif active_lang == "mr-IN":
+                disp = f"Naveen grahak {new_cust['full_name']} (Local) jodla gela aani {len(entries)} vyavahar nondavle. Kul baaki: ₹{new_bal}."
+                tts = f"Naveen grahak {new_cust['full_name']} jodla gela aani {cnt_words} vyavahar nondavle. Kul baaki {spoken_bal} rupaye."
             else:
                 disp = f"Naya grahak {new_cust['full_name']} (Local) joda gaya aur {len(entries)} len-den darj kiye gaye. Kul baaki: ₹{new_bal}."
                 tts = f"Naya grahak {new_cust['full_name']} joda gaya aur {cnt_words} len-den darj kiye gaye. Kul baaki {spoken_bal} rupaye hai."

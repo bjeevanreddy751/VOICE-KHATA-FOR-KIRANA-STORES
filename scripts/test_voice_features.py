@@ -163,6 +163,26 @@ def run_tests():
             assert not any(ch.isdigit() for ch in r["tts_reply"])
             _ok(f"Localized auto-enrollment confirmed in [{lang}] ('{expected_phrase}')")
 
+        # 1.5b Multi-entry localized confirmations (Tamil, Telugu, Marathi)
+        multi_lang_tests = [
+            ("Praveen ku 400 kadan kal 100 jama", "ta-IN", "Pudhiya vaadikkaiyaalar"),
+            ("Naresh ki 500 appu kal 200 jama", "te-IN", "Kottha customer"),
+            ("Sachin chi 600 udhaari kal 150 jama", "mr-IN", "Naveen grahak"),
+        ]
+        for utt, lang, expected_phrase in multi_lang_tests:
+            s = SessionState(preferred_language=lang)
+            r = process_utterance(utt, s, db_path=TEST_DB_PATH)
+            assert r["intent"] == INTENT_AUTO_ENROLLED_ENTRY, f"Multi-entry failed for {lang}: {r['intent']}"
+            assert expected_phrase.lower() in r["display_reply"].lower()
+            assert not any(ch.isdigit() for ch in r["tts_reply"])
+            _ok(f"Multi-entry auto-enrollment confirmed in [{lang}] ('{expected_phrase}')")
+
+        # 1.5c Honorific transaction guardrail: "Suresh ji ka 100 udhaar" should match Suresh Gowda, not auto-enroll
+        res_hon = process_utterance("Suresh ji ka 100 udhaar", session1, db_path=TEST_DB_PATH)
+        assert res_hon["intent"] != INTENT_AUTO_ENROLLED_ENTRY, "Should match existing Suresh Gowda"
+        assert res_hon["customer"]["full_name"] == "Suresh Gowda"
+        _ok("Transaction with honorific 'Suresh ji ka 100 udhaar' matched existing Suresh Gowda without duplicate enrollment")
+
         # 1.6 Guardrails: Invalid customer names
         s_guard = SessionState()
         res_no_name = process_utterance("500 udhaar", s_guard, db_path=TEST_DB_PATH)
@@ -209,7 +229,17 @@ def run_tests():
         _info(f"Input: '{t_s3}' -> Intent: {res_s3['intent']}")
         assert res_s3["intent"] == INTENT_HOMONYM_CUSTOMER_SEARCH
         assert "Sharma" in res_s3["display_reply"] and "Verma" in res_s3["display_reply"]
+        assert session2.pending_search_disambiguation is not None
         _ok("Homonym search 'Ramesh search karo' -> HOMONYM_CUSTOMER_SEARCH (returns both Ramesh)")
+
+        # 2.3b Homonym follow-up disambiguation turn: Shopkeeper simply says "Sharma"
+        t_s3b = "Sharma"
+        res_s3b = process_utterance(t_s3b, session2, db_path=TEST_DB_PATH)
+        _info(f"Follow-up input: '{t_s3b}' -> Intent: {res_s3b['intent']}")
+        assert res_s3b["intent"] == INTENT_CUSTOMER_SEARCH
+        assert res_s3b["customer"]["full_name"] == "Ramesh Sharma"
+        assert res_s3b["highlight_customer_id"] is not None
+        _ok("Two-turn homonym follow-up 'Sharma' resolved uniquely to Ramesh Sharma with highlight")
 
         # 2.4 "Ramesh Sharma search karo" (Specific search)
         t_s4 = "Ramesh Sharma search karo"
@@ -219,6 +249,25 @@ def run_tests():
         assert res_s4["customer"]["full_name"] == "Ramesh Sharma"
         assert res_s4["highlight_customer_id"] is not None
         _ok("Specific search 'Ramesh Sharma search karo' -> resolved uniquely to Ramesh Sharma")
+
+        # 2.4b Indian Honorifics and Indic search phrasing:
+        # Hindi: "Suresh ji ka hisaab dikhao"
+        res_hon_search = process_utterance("Suresh ji ka hisaab dikhao", session2, db_path=TEST_DB_PATH)
+        assert res_hon_search["intent"] == INTENT_CUSTOMER_SEARCH
+        assert res_hon_search["customer"]["full_name"] == "Suresh Gowda"
+        _ok("Search with honorific 'Suresh ji ka hisaab dikhao' -> matched Suresh Gowda")
+
+        # Kannada: "Suresh avara hisaabu nodi"
+        res_kn_search = process_utterance("Suresh avara hisaabu nodi", session2, db_path=TEST_DB_PATH, stt_lang="kn-IN")
+        assert res_kn_search["intent"] == INTENT_CUSTOMER_SEARCH
+        assert res_kn_search["customer"]["full_name"] == "Suresh Gowda"
+        _ok("Kannada search 'Suresh avara hisaabu nodi' -> matched Suresh Gowda")
+
+        # Tamil: "Suresh kanakku kaattu"
+        res_ta_search = process_utterance("Suresh kanakku kaattu", session2, db_path=TEST_DB_PATH, stt_lang="ta-IN")
+        assert res_ta_search["intent"] == INTENT_CUSTOMER_SEARCH
+        assert res_ta_search["customer"]["full_name"] == "Suresh Gowda"
+        _ok("Tamil search 'Suresh kanakku kaattu' -> matched Suresh Gowda")
 
         # 2.5 Non-existent customer
         t_s5 = "Kabir search karo"
@@ -273,6 +322,12 @@ def run_tests():
         assert "today's summary" in res_sum3["display_reply"].lower()
         _ok("Recognized English query 'Today summary' -> DAILY_SUMMARY_QUERY")
 
+        # 3.4 Additional natural daily tally queries
+        for extra_query in ("Aaj ki collection", "Dukan ka hisaab", "Aaj ka balance"):
+            res_extra = process_utterance(extra_query, session3, db_path=TEST_DB_PATH)
+            assert res_extra["intent"] == INTENT_DAILY_SUMMARY_QUERY, f"Failed for '{extra_query}': {res_extra['intent']}"
+            _ok(f"Recognized daily summary query '{extra_query}' -> DAILY_SUMMARY_QUERY")
+
         passed += 1
     except Exception as e:
         _fail(f"Test 3 failed: {e}")
@@ -283,6 +338,8 @@ def run_tests():
     # -----------------------------------------------------------------------
     _banner("TEST 4: Full-Duplex WebSocket & REST Integration")
     try:
+        # Reset the default demo DB so this test is completely idempotent
+        database.reset_demo_db()
         client = TestClient(app)
 
         with client.websocket_connect("/ws/voice") as ws:
@@ -294,6 +351,7 @@ def run_tests():
             # 4.1 Auto-enroll via WebSocket
             ws.send_json({"type": "UTTERANCE", "text": "Kavita ka 800 udhaar"})
             reply_auto = ws.receive_json()
+            _info(f"WebSocket reply_auto: {reply_auto}")
             assert reply_auto["type"] == "VOICE_RESULT"
             assert reply_auto["intent"] == INTENT_AUTO_ENROLLED_ENTRY
             assert reply_auto.get("highlight_customer_id") is not None

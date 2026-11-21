@@ -312,7 +312,7 @@ async def voice_websocket(
                         detected_lang = payload.get("language", detected_lang)
 
                     # Process utterance through deterministic ledger engine
-                    turn = process_utterance(transcript, session)
+                    turn = process_utterance(transcript, session, stt_lang=detected_lang)
                     final_lang = turn.get("detected_language") or detected_lang
 
                     # Synthesize reply via Gnani Timbre v3.0
@@ -357,8 +357,8 @@ async def voice_websocket(
 
                     raw_text = payload.get("text", "")
                     req_lang = payload.get("language")
-
-                    turn = process_utterance(raw_text, session)
+                    turn_lang = session.preferred_language if session.preferred_language != "auto" else req_lang
+                    turn = process_utterance(raw_text, session, stt_lang=turn_lang)
                     final_lang = turn.get("detected_language") or (
                         session.preferred_language
                         if session.preferred_language != "auto"
@@ -502,7 +502,7 @@ async def voice_turn(
     live_param = str(live or "").strip().lower()
     is_bypass = bool(req.bypass_cache or bypass_cache or (live_param in ("1", "true", "yes")))
     t0 = time.perf_counter()
-    turn = process_utterance(req.text, session)
+    turn = process_utterance(req.text, session, stt_lang=req.language)
     active_lang = turn.get("detected_language") or req.language
     tts_res = await synthesize_timbre_tts(turn["tts_reply"], language_code=active_lang, bypass_cache=is_bypass)
     e2e_latency = int((time.perf_counter() - t0) * 1000)

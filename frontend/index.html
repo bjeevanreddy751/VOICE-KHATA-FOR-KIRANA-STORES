@@ -2502,9 +2502,9 @@
       // ── Physical Kirana Soundbox Chime (Web Audio API) ──────
       function playTallyChime(type = 'chime') {
         try {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          if (!AudioContext) return;
-          const ctx = new AudioContext();
+          ensureAudioUnlocked();
+          const ctx = audioCtx;
+          if (!ctx) return;
           const now = ctx.currentTime;
           
           if (type === 'enroll') {
@@ -2604,13 +2604,13 @@
           ws.send(JSON.stringify({
             type: 'UTTERANCE',
             text: text,
-            language: selectedLanguage
+            language: currentLanguage
           }));
         } else {
           vkFetch('/api/voice-turn', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text, language: selectedLanguage })
+            body: JSON.stringify({ text: text, language: currentLanguage })
           })
           .then(res => res.json())
           .then(data => {

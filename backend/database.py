@@ -9,6 +9,7 @@ and DPDP compliance guards.
 from __future__ import annotations
 
 import datetime
+import re
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Generator, Sequence
@@ -349,42 +350,55 @@ def find_customers_by_name(query: str, db_path: str | Path | None = None) -> lis
          (e.g., 'Sharma' or 'Ramesh Sharma' returns [Ramesh Sharma])
       2. Otherwise check first_name match (e.g., 'Ramesh' returns [Ramesh Sharma, Ramesh Verma]).
       3. Fallback to substring matching across full_name or landmark.
+      Supports Indian honorific stripping (e.g. 'Suresh ji' -> 'Suresh').
     """
     q = query.strip()
     if not q:
         return []
 
+    # Strip common Indic honorifics if present (e.g. 'Suresh ji' -> 'Suresh', 'Ramesh bhai' -> 'Ramesh')
+    q_stripped = re.sub(
+        r"\b(?:ji|bhai|bhaiya|anna|garu|avargal|sahab|saab|sir|chechi|seth|sethji|shree|sri)\b",
+        "",
+        q,
+        flags=re.IGNORECASE,
+    ).strip()
+
     with get_db(db_path) as conn:
-        # 1. Exact full_name match
-        rows = conn.execute(
-            "SELECT * FROM customers WHERE LOWER(full_name) = LOWER(?)", (q,)
-        ).fetchall()
-        if rows:
-            return [dict(r) for r in rows]
+        for candidate_q in ([q] if not q_stripped or q_stripped.lower() == q.lower() else [q, q_stripped]):
+            if not candidate_q:
+                continue
+            # 1. Exact full_name match
+            rows = conn.execute(
+                "SELECT * FROM customers WHERE LOWER(full_name) = LOWER(?)", (candidate_q,)
+            ).fetchall()
+            if rows:
+                return [dict(r) for r in rows]
 
-        # 2. Exact last_name match
-        rows = conn.execute(
-            "SELECT * FROM customers WHERE LOWER(last_name) = LOWER(?)", (q,)
-        ).fetchall()
-        if rows:
-            return [dict(r) for r in rows]
+            # 2. Exact last_name match
+            rows = conn.execute(
+                "SELECT * FROM customers WHERE LOWER(last_name) = LOWER(?)", (candidate_q,)
+            ).fetchall()
+            if rows:
+                return [dict(r) for r in rows]
 
-        # 3. Exact landmark match
-        rows = conn.execute(
-            "SELECT * FROM customers WHERE LOWER(landmark) = LOWER(?)", (q,)
-        ).fetchall()
-        if rows:
-            return [dict(r) for r in rows]
+            # 3. Exact landmark match
+            rows = conn.execute(
+                "SELECT * FROM customers WHERE LOWER(landmark) = LOWER(?)", (candidate_q,)
+            ).fetchall()
+            if rows:
+                return [dict(r) for r in rows]
 
-        # 4. First name match (e.g. 'Ramesh' -> [Ramesh Sharma, Ramesh Verma])
-        rows = conn.execute(
-            "SELECT * FROM customers WHERE LOWER(first_name) = LOWER(?)", (q,)
-        ).fetchall()
-        if rows:
-            return [dict(r) for r in rows]
+            # 4. First name match (e.g. 'Ramesh' -> [Ramesh Sharma, Ramesh Verma])
+            rows = conn.execute(
+                "SELECT * FROM customers WHERE LOWER(first_name) = LOWER(?)", (candidate_q,)
+            ).fetchall()
+            if rows:
+                return [dict(r) for r in rows]
 
         # 5. Fallback substring match
-        like_pattern = f"%{q.lower()}%"
+        target_pattern = q_stripped.lower() if q_stripped else q.lower()
+        like_pattern = f"%{target_pattern}%"
         rows = conn.execute(
             """
             SELECT * FROM customers
@@ -627,8 +641,8 @@ def auto_enroll_and_transact(
     if not toks:
         raise ValueError("Customer name cannot be empty")
 
-    fn = toks[0]
-    ln = " ".join(toks[1:]) if len(toks) > 1 else ""
+    fn = toks[0].capitalize()
+    ln = " ".join(t.capitalize() for t in toks[1:]) if len(toks) > 1 else ""
     full_name = f"{fn} {ln}".strip() if ln else fn
     lm = (landmark or "").strip() or "Local"
     ph = (phone or "").strip()
